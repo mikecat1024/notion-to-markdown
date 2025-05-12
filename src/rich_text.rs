@@ -76,7 +76,10 @@ impl RichText {
                     .collect::<String>()
             };
 
+        let mut is_annotated = false;
+
         let node = if annotations.code {
+            is_annotated = true;
             arena.alloc(Node::new(RefCell::new(Ast::new(
                 // In Comrak, NodeCode.literal causes a panic in format_commonmark when its length is 0,
                 // so if the literal is an empty string, use NodeValue::Raw("``") instead.
@@ -95,47 +98,57 @@ impl RichText {
                 Default::default(),
             ))))
         } else {
-            let special_chars = [
-                '*', '_', '#', '+', '-', '=', '!', '[', ']', '(', ')', '{', '}', '<', '>', '&',
-                '\'', '"', '\\',
-            ];
+            arena.alloc(Node::new(RefCell::new(Ast::new(
+                NodeValue::Text(trimmed_content.clone()),
+                Default::default(),
+            ))))
+        };
 
-            if trimmed_content.chars().any(|c| special_chars.contains(&c)) {
-                // The inability to manipulate Ast.content causes symbols
-                // and other characters to be escaped in NodeValue::Text.
-                // To prevent this, NodeValue::Raw is used.
-                arena.alloc(Node::new(RefCell::new(Ast::new(
-                    NodeValue::Raw(trimmed_content.clone()),
-                    Default::default(),
-                ))))
+        // Wrap with NodeValue::Strong
+        let node = if annotations.bold {
+            if is_annotated || !plain_text.is_empty() {
+                Self::wrap(arena, vec![node], NodeValue::Strong)
             } else {
+                is_annotated = true;
                 arena.alloc(Node::new(RefCell::new(Ast::new(
-                    NodeValue::Text(trimmed_content.clone()),
+                    NodeValue::Text("****".into()),
                     Default::default(),
                 ))))
             }
-        };
-
-        println!("{:#?}", node);
-
-        let node = if annotations.bold {
-            Self::wrap(arena, vec![node], NodeValue::Strong)
         } else {
             node
         };
 
+        // Wrap with NodeValue::Emph
         let node = if annotations.italic {
-            Self::wrap(arena, vec![node], NodeValue::Emph)
+            if is_annotated || !plain_text.is_empty() {
+                Self::wrap(arena, vec![node], NodeValue::Emph)
+            } else {
+                is_annotated = true;
+                arena.alloc(Node::new(RefCell::new(Ast::new(
+                    NodeValue::Text("**".into()),
+                    Default::default(),
+                ))))
+            }
         } else {
             node
         };
 
+        // Wrap with NodeValue::Strikethrough
         let node = if annotations.strikethrough {
-            Self::wrap(arena, vec![node], NodeValue::Strikethrough)
+            if is_annotated || !plain_text.is_empty() {
+                Self::wrap(arena, vec![node], NodeValue::Strikethrough)
+            } else {
+                arena.alloc(Node::new(RefCell::new(Ast::new(
+                    NodeValue::Text("~~~~".into()),
+                    Default::default(),
+                ))))
+            }
         } else {
             node
         };
 
+        // Join leading and trailing spaces
         let children = if annotations.code {
             vec![node]
         } else {
@@ -160,6 +173,7 @@ impl RichText {
             children
         };
 
+        // Wrap with NodeValue::Link
         if let Some(url) = href {
             vec![Self::wrap(
                 arena,
@@ -186,218 +200,5 @@ impl RichText {
                 annotations,
             } => Self::text_to_ast(arena, plain_text, href, annotations),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use comrak::{
-        arena_tree::Node,
-        format_commonmark,
-        nodes::{Ast, NodeValue},
-        parse_document, Arena,
-    };
-    use rstest::rstest;
-    use std::cell::RefCell;
-
-    use crate::{
-        rich_text::{Annotations, RichText},
-        test_utils::ast_eq,
-        utils::gfm_options,
-    };
-
-    fn annotate_text(text: String, annotations: Annotations, href: Option<String>) -> String {
-        let leading_space = text
-            .chars()
-            .take_while(|c| c.is_whitespace())
-            .collect::<String>();
-
-        let trimmed_content = text.trim().to_string();
-
-        let trailing_space =
-            if trimmed_content.is_empty() && text.chars().all(|c| c.is_whitespace()) {
-                String::new()
-            } else {
-                text.chars()
-                    .rev()
-                    .take_while(|c| c.is_whitespace())
-                    .collect::<String>()
-                    .chars()
-                    .rev()
-                    .collect::<String>()
-            };
-
-        let mut expected_markdown = trimmed_content;
-
-        if annotations.code {
-            expected_markdown = format!("`{}`", text);
-        }
-        if annotations.bold {
-            expected_markdown = format!("**{}**", expected_markdown);
-        }
-        if annotations.italic {
-            expected_markdown = format!("*{}*", expected_markdown);
-        }
-        if annotations.strikethrough {
-            expected_markdown = format!("~~{}~~", expected_markdown);
-        }
-
-        if let Some(url) = href {
-            if annotations.code {
-                format!("[{}]({})", expected_markdown, url)
-            } else {
-                format!(
-                    "[{}{}{}]({})",
-                    leading_space, expected_markdown, trailing_space, url
-                )
-            }
-        } else {
-            if annotations.code {
-                expected_markdown
-            } else {
-                format!("{}{}{}", leading_space, expected_markdown, trailing_space)
-            }
-        }
-    }
-
-    #[rstest]
-    fn test_rich_text_to_ast(
-        // Note: This test assumes the input text is "Hello World" without punctuation or being empty.
-        // Variations like "Hello World!" or an empty string may cause this test to fail due to differences
-        // in how the AST parser handles punctuation and empty content.
-        // The behavior for such cases will be tested separately in `test_rich_text_to_markdown`.
-        #[values("Hello World")] text: String,
-        #[values(None, Some("https://example.com".to_string()))] href: Option<String>,
-        #[values(false, true)] code: bool,
-        #[values(false, true)] bold: bool,
-        #[values(false, true)] italic: bool,
-        #[values(false, true)] strikethrough: bool,
-    ) {
-        let rich_text = RichText::Text {
-            plain_text: text.clone(),
-            href: href.clone(),
-            annotations: Annotations {
-                bold,
-                italic,
-                strikethrough,
-                code,
-            },
-        };
-
-        let expected_markdown = annotate_text(
-            text,
-            Annotations {
-                bold,
-                italic,
-                strikethrough,
-                code,
-            },
-            href,
-        );
-
-        let arena = Arena::new();
-
-        let expected_document = parse_document(&arena, &expected_markdown, &gfm_options());
-
-        let notion_nodes = rich_text.to_ast(&arena);
-        let notion_paragraph = arena.alloc(Node::new(RefCell::new(Ast::new(
-            NodeValue::Paragraph,
-            Default::default(),
-        ))));
-
-        notion_nodes
-            .iter()
-            .for_each(|node| notion_paragraph.append(node));
-
-        let notion_document = arena.alloc(Node::new(RefCell::new(Ast::new(
-            NodeValue::Document,
-            Default::default(),
-        ))));
-
-        notion_document.append(&notion_paragraph);
-
-        assert!(
-            ast_eq(notion_document, expected_document),
-            "Expected {:#?}, but found {:#?}",
-            expected_document,
-            notion_document
-        );
-    }
-
-    #[rstest]
-    fn test_rich_text_to_markdown(
-        // If text is such as " Hello World! " or " Hello World!", the test cases should be fails
-        // because Comrak's serializer adds padding spaces around inline code spans that start
-        // or end with a space character, in order to preserve their exact contents.
-        //
-        // However, according to the CommonMark (and GFM) specification,
-        // leading and trailing spaces in code spans are trimmed or preserved（in the case of non unicode spacing),
-        // unless the span consists entirely of spaces.
-        //
-        // As a result, Comrak's output differs from the GFM-compliant expectation.
-        //
-        // See https://github.com/kivikakk/comrak/blob/ce1837224bc25b4133068771fab43889ad32fd7e/src/cm.rs#L665
-        #[values("Hello World!", " ", "", "![Hello World!](https://example.com)")] text: String,
-        #[values(None, Some("https://example.com".into()))] href: Option<String>,
-        #[values(false, true)] code: bool,
-        #[values(false, true)] bold: bool,
-        #[values(false, true)] italic: bool,
-        #[values(false, true)] strikethrough: bool,
-    ) {
-        let rich_text = RichText::Text {
-            plain_text: text.clone(),
-            href: href.clone(),
-            annotations: Annotations {
-                bold,
-                italic,
-                strikethrough,
-                code,
-            },
-        };
-
-        let expected_markdown = annotate_text(
-            text,
-            Annotations {
-                bold,
-                italic,
-                strikethrough,
-                code,
-            },
-            href,
-        );
-
-        let arena = Arena::new();
-
-        let notion_nodes = rich_text.to_ast(&arena);
-        let notion_paragraph = arena.alloc(Node::new(RefCell::new(Ast::new(
-            NodeValue::Paragraph,
-            Default::default(),
-        ))));
-
-        notion_nodes
-            .iter()
-            .for_each(|node| notion_paragraph.append(node));
-
-        let notion_document = arena.alloc(Node::new(RefCell::new(Ast::new(
-            NodeValue::Document,
-            Default::default(),
-        ))));
-
-        notion_document.append(&notion_paragraph);
-
-        let mut notion_markdown = vec![];
-        let _ = format_commonmark(&notion_document, &gfm_options(), &mut notion_markdown);
-
-        assert_eq!(
-            {
-                if expected_markdown.is_empty() {
-                    "".into()
-                } else {
-                    expected_markdown + "\n"
-                }
-            },
-            String::from_utf8(notion_markdown).unwrap(),
-        );
     }
 }

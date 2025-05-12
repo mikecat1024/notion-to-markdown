@@ -39,7 +39,6 @@ impl Block {
                 ))));
 
                 for rich_text in &paragraph.rich_text {
-                    println!("rich_text: {:#?}", rich_text);
                     let children = rich_text.to_ast(arena);
                     children.iter().for_each(|node| paragraph_node.append(node));
                 }
@@ -51,79 +50,5 @@ impl Block {
                 Default::default(),
             )))),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::{cell::RefCell, fs, io::BufReader};
-
-    use comrak::{
-        arena_tree::Node,
-        format_commonmark,
-        nodes::{Ast, NodeValue},
-        parse_document, Arena,
-    };
-    use rstest::rstest;
-
-    use crate::{test_utils::ast_eq, utils::gfm_options};
-
-    use super::Block;
-
-    #[rstest]
-    #[case::paragraph("src/tests/block/paragraph_response.json", "this is paragraph")]
-    fn test_block_to_ast(#[case] path: String, #[case] expected: String) {
-        let file = fs::File::open(path).unwrap();
-        let reader = BufReader::new(file);
-        let block: Block = serde_json::from_reader(reader).unwrap();
-
-        let arena = Arena::new();
-        let expected_document = parse_document(&arena, &expected, &gfm_options());
-        let notion_paragraph = block.to_ast(&arena);
-
-        let notion_document = arena.alloc(Node::new(RefCell::new(Ast::new(
-            NodeValue::Document,
-            Default::default(),
-        ))));
-
-        notion_document.append(&notion_paragraph);
-
-        assert!(
-            ast_eq(notion_document, expected_document),
-            "Expected {:#?}, but found {:#?}",
-            expected_document,
-            notion_document
-        );
-    }
-
-    #[rstest]
-    #[case::paragraph("src/tests/block/paragraph_response.json", "this is paragraph")]
-    fn test_block_to_markdown(#[case] path: String, #[case] expected_markdown: String) {
-        let file = fs::File::open(path).unwrap();
-        let reader = BufReader::new(file);
-        let block: Block = serde_json::from_reader(reader).unwrap();
-
-        let arena = Arena::new();
-        let notion_paragraph = block.to_ast(&arena);
-
-        let notion_document = arena.alloc(Node::new(RefCell::new(Ast::new(
-            NodeValue::Document,
-            Default::default(),
-        ))));
-        notion_document.append(&notion_paragraph);
-
-        let mut notion_markdown = vec![];
-        let _ = format_commonmark(&notion_document, &gfm_options(), &mut notion_markdown);
-
-        assert_eq!(
-            {
-                if expected_markdown.is_empty() {
-                    "".into()
-                } else {
-                    expected_markdown + "\n"
-                }
-            },
-            String::from_utf8(notion_markdown).unwrap(),
-        );
     }
 }

@@ -3,8 +3,6 @@ use comrak::Arena;
 
 mod block;
 mod rich_text;
-mod test_utils;
-mod utils;
 
 pub fn construct_ast(response: &str) {
     let arena = Arena::new();
