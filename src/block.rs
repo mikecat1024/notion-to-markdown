@@ -95,7 +95,7 @@ impl Block {
                     .common
                     .children
                     .iter()
-                    .map(|child| match self.variant {
+                    .map(|child| match child.variant {
                         BlockVariant::BulletedListItem { .. }
                         | BlockVariant::NumberedListItem { .. } => {
                             // This child AST should be wrapped with NodeValue::List
