@@ -19,95 +19,15 @@ pub struct Block {
 }
 
 impl Block {
-    fn child_to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, depth: usize) -> &'a AstNode<'a> {
-        let node_value = self.variant.wrapper_node(depth);
-
-        match &self.variant {
-            BlockVariant::Paragraph {
-                paragraph: block_content,
-            }
-            | BlockVariant::Heading1 {
-                heading_1: block_content,
-            }
-            | BlockVariant::Heading2 {
-                heading_2: block_content,
-            }
-            | BlockVariant::Heading3 {
-                heading_3: block_content,
-            } => {
-                let wrapper = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    node_value,
-                    Default::default(),
-                ))));
-
-                let rich_text_asts: Vec<&'a AstNode<'a>> = block_content
-                    .rich_text
-                    .iter()
-                    .map(|rich_text| rich_text.to_ast(&arena))
-                    .flatten()
-                    .collect();
-
-                rich_text_asts.iter().for_each(|ast| wrapper.append(ast));
-
-                wrapper
-            }
-            BlockVariant::BulletedListItem { bulleted_list_item } => {
-                let wrapper = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    node_value,
-                    Default::default(),
-                ))));
-
-                let item_value = NodeValue::Item(NodeList {
-                    list_type: ListType::Bullet,
-                    is_task_list: false,
-                    bullet_char: b'-',
-                    tight: true,
-                    delimiter: ListDelimType::default(),
-                    marker_offset: depth,
-                    padding: 2,
-                    start: 1,
-                });
-
-                let item = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    item_value,
-                    Default::default(),
-                ))));
-
-                let paragraph = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    NodeValue::Paragraph,
-                    Default::default(),
-                ))));
-
-                let text_asts: Vec<&'a AstNode<'a>> = bulleted_list_item
-                    .rich_text
-                    .iter()
-                    .map(|rich_text| rich_text.to_ast(&arena))
-                    .flatten()
-                    .collect();
-
-                text_asts.iter().for_each(|ast| paragraph.append(ast));
-
-                item.append(paragraph);
-
-                let children_asts: Vec<&'a AstNode<'a>> = self
-                    .common
-                    .children
-                    .iter()
-                    .map(|child| child.child_to_ast(arena, depth + 1))
-                    .collect();
-
-                children_asts.iter().for_each(|ast| item.append(ast));
-
-                wrapper.append(item);
-
-                wrapper
-            }
-            _ => panic!("not implemented error"),
-        }
+    fn create_node<'a>(arena: &'a Arena<AstNode<'a>>, node_value: NodeValue) -> &'a AstNode<'a> {
+        arena.alloc(AstNode::new(RefCell::new(Ast::new(
+            node_value,
+            Default::default(),
+        ))))
     }
 
     pub(crate) fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
-        let node_value = self.variant.wrapper_node(0);
+        let node_value = self.variant.wrapper_node();
 
         match &self.variant {
             BlockVariant::Paragraph {
@@ -122,10 +42,7 @@ impl Block {
             | BlockVariant::Heading3 {
                 heading_3: block_content,
             } => {
-                let wrapper = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    node_value,
-                    Default::default(),
-                ))));
+                let wrapper = Self::create_node(arena, node_value);
 
                 let rich_text_asts: Vec<&'a AstNode<'a>> = block_content
                     .rich_text
@@ -138,34 +55,30 @@ impl Block {
 
                 wrapper
             }
-            BlockVariant::BulletedListItem { bulleted_list_item } => {
-                let wrapper = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    node_value,
-                    Default::default(),
-                ))));
+            BlockVariant::BulletedListItem {
+                bulleted_list_item: block_content,
+            }
+            | BlockVariant::NumberedListItem {
+                numbered_list_item: block_content,
+            } => {
+                let wrapper = Self::create_node(arena, node_value);
 
                 let item_value = NodeValue::Item(NodeList {
-                    list_type: ListType::Bullet,
+                    list_type: ListType::Ordered,
                     is_task_list: false,
                     bullet_char: b'-',
                     tight: true,
                     delimiter: ListDelimType::default(),
                     marker_offset: 0,
-                    padding: 2,
+                    padding: 4,
                     start: 1,
                 });
 
-                let item = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    item_value,
-                    Default::default(),
-                ))));
+                let item = Self::create_node(arena, item_value);
 
-                let paragraph = arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    NodeValue::Paragraph,
-                    Default::default(),
-                ))));
+                let paragraph = Self::create_node(arena, NodeValue::Paragraph);
 
-                let text_asts: Vec<&'a AstNode<'a>> = bulleted_list_item
+                let text_asts: Vec<&'a AstNode<'a>> = block_content
                     .rich_text
                     .iter()
                     .map(|rich_text| rich_text.to_ast(&arena))
@@ -176,20 +89,41 @@ impl Block {
 
                 item.append(paragraph);
 
+                let mut has_list_item = false;
+
                 let children_asts: Vec<&'a AstNode<'a>> = self
                     .common
                     .children
                     .iter()
-                    .map(|child| child.child_to_ast(arena, 1))
+                    .map(|child| match self.variant {
+                        BlockVariant::BulletedListItem { .. }
+                        | BlockVariant::NumberedListItem { .. } => {
+                            // This child AST should be wrapped with NodeValue::List
+                            // So, AST have only one child, NodeValue::Item.
+                            let ast = child.to_ast(arena);
+                            let child = ast.first_child().unwrap();
+                            has_list_item = true;
+                            child
+                        }
+                        _ => child.to_ast(arena),
+                    })
                     .collect();
 
-                children_asts.iter().for_each(|ast| item.append(ast));
+                if has_list_item {
+                    let list = Self::create_node(arena, self.variant.wrapper_node());
+                    children_asts.iter().for_each(|ast| list.append(ast));
+                    item.append(list);
+                } else {
+                    children_asts.iter().for_each(|ast| item.append(ast));
+                }
 
                 wrapper.append(item);
 
                 wrapper
             }
-            _ => panic!("not implemented error"),
+            BlockVariant::Unsupported => {
+                Self::create_node(arena, NodeValue::Raw(UNSUPPORTED_NODE_TEXT.into()))
+            }
         }
     }
 }
@@ -216,12 +150,15 @@ pub enum BlockVariant {
     BulletedListItem {
         bulleted_list_item: BlockContent,
     },
+    NumberedListItem {
+        numbered_list_item: BlockContent,
+    },
     #[serde(other)]
     Unsupported,
 }
 
 impl BlockVariant {
-    fn wrapper_node(&self, depth: usize) -> NodeValue {
+    fn wrapper_node(&self) -> NodeValue {
         match self {
             BlockVariant::Paragraph { .. } => NodeValue::Paragraph,
             BlockVariant::Heading1 { .. } => NodeValue::Heading(NodeHeading {
@@ -242,8 +179,18 @@ impl BlockVariant {
                 bullet_char: b'-',
                 tight: true,
                 delimiter: ListDelimType::default(),
-                marker_offset: depth,
-                padding: 2,
+                marker_offset: 0,
+                padding: 4,
+                start: 1,
+            }),
+            BlockVariant::NumberedListItem { .. } => NodeValue::List(NodeList {
+                list_type: ListType::Ordered,
+                is_task_list: false,
+                bullet_char: b'-',
+                tight: true,
+                delimiter: ListDelimType::default(),
+                marker_offset: 0,
+                padding: 4,
                 start: 1,
             }),
             BlockVariant::Unsupported => NodeValue::Raw(UNSUPPORTED_NODE_TEXT.into()),

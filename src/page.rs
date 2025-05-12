@@ -72,8 +72,96 @@ mod test {
     use indoc::indoc;
     use rstest::rstest;
 
+    #[test]
+    fn test_page_with_bulleted_item() {
+        let parent_item: Block =
+            serde_json::from_str(include_str!("tests/block/bulleted_list_item_response.json"))
+                .unwrap();
+        let child_item1: Block = serde_json::from_str(include_str!(
+            "tests/block/bulleted_list_item_child_response.json"
+        ))
+        .unwrap();
+        let child_item2: Block = serde_json::from_str(include_str!(
+            "tests/block/bulleted_list_item_child_response.json"
+        ))
+        .unwrap();
+
+        let arena = Arena::new();
+
+        let page = Page::from_blocks(vec![parent_item, child_item1, child_item2]);
+
+        let ast = page.to_ast(&arena);
+
+        let mut options = Options::default();
+
+        options.extension.strikethrough = true;
+        options.extension.table = true;
+        options.extension.tasklist = true;
+        options.extension.autolink = true;
+
+        let mut output = vec![];
+        format_commonmark(ast, &options, &mut output).unwrap();
+
+        assert_eq!(
+            String::from_utf8(output)
+                .unwrap()
+                .replace("<!-- end list -->", ""),
+            indoc! {r#"
+            - this is bulleted list item
+              - this is second bulleted list item
+              - this is second bulleted list item
+            "#}
+        )
+    }
+
     #[rstest]
-    fn test_page_to_ast() {
+    fn test_page_with_numbered_item() {
+        let numbered_parent_item: Block =
+            serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json"))
+                .unwrap();
+        let numbered_child_item1: Block = serde_json::from_str(include_str!(
+            "tests/block/numbered_list_item_child_response.json"
+        ))
+        .unwrap();
+        let numbered_child_item2: Block = serde_json::from_str(include_str!(
+            "tests/block/numbered_list_item_child_response.json"
+        ))
+        .unwrap();
+
+        let arena = Arena::new();
+
+        let page = Page::from_blocks(vec![
+            numbered_parent_item,
+            numbered_child_item1,
+            numbered_child_item2,
+        ]);
+
+        let ast = page.to_ast(&arena);
+
+        let mut options = Options::default();
+
+        options.extension.strikethrough = true;
+        options.extension.table = true;
+        options.extension.tasklist = true;
+        options.extension.autolink = true;
+
+        let mut output = vec![];
+        format_commonmark(ast, &options, &mut output).unwrap();
+
+        assert_eq!(
+            String::from_utf8(output)
+                .unwrap()
+                .replace("<!-- end list -->", ""),
+            indoc! {r#"
+            1. this is numbered list item
+               1. this is second numbered list item
+               2. this is second numbered list item
+            "#}
+        )
+    }
+
+    #[rstest]
+    fn test_page_to_markdown() {
         let headline1: Block =
             serde_json::from_str(include_str!("tests/block/headline1_response.json")).unwrap();
         let headline2: Block =
@@ -82,24 +170,10 @@ mod test {
             serde_json::from_str(include_str!("tests/block/headline3_response.json")).unwrap();
         let paragraph: Block =
             serde_json::from_str(include_str!("tests/block/paragraph_response.json")).unwrap();
-        let parent_item: Block =
-            serde_json::from_str(include_str!("tests/block/bulleted_list_item_response.json"))
-                .unwrap();
-        let child_item: Block = serde_json::from_str(include_str!(
-            "tests/block/bulleted_list_item_child_response.json"
-        ))
-        .unwrap();
 
         let arena = Arena::new();
 
-        let page = Page::from_blocks(vec![
-            headline1,
-            headline2,
-            headline3,
-            paragraph,
-            parent_item,
-            child_item,
-        ]);
+        let page = Page::from_blocks(vec![headline1, headline2, headline3, paragraph]);
 
         println!("{:#?}", page.blocks);
         let ast = page.to_ast(&arena);
@@ -115,7 +189,9 @@ mod test {
         format_commonmark(ast, &options, &mut output).unwrap();
 
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            String::from_utf8(output)
+                .unwrap()
+                .replace("<!-- end list -->", ""),
             indoc! {r#"
             # this is headline1
 
@@ -124,9 +200,6 @@ mod test {
             ### this is headline3
 
             this is paragraph
-
-            - this is bulleted list item
-              - this is second bulleted list item
             "#}
         )
     }
