@@ -6,7 +6,7 @@ use comrak::Arena;
 use serde;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
 pub enum RichText {
@@ -20,13 +20,13 @@ pub enum RichText {
     },
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, PartialEq, Clone)]
 #[serde(rename_all = "snake_case")]
 pub struct Annotations {
-    pub bold: bool,
-    pub italic: bool,
-    pub strikethrough: bool,
-    pub code: bool,
+    bold: bool,
+    italic: bool,
+    strikethrough: bool,
+    code: bool,
 }
 
 impl Default for Annotations {
@@ -192,7 +192,7 @@ impl RichText {
         }
     }
 
-    pub fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> Vec<&AstNode<'a>> {
+    pub fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> Vec<&'a AstNode<'a>> {
         match self {
             RichText::Text {
                 plain_text,
