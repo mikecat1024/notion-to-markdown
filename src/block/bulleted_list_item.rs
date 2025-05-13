@@ -60,7 +60,9 @@ impl BlockAst for BulletedListItem {
         let children_asts: Vec<&'a AstNode<'a>> = children
             .iter()
             .map(|child| match child {
-                Block::BulletedListItem { .. } | Block::NumberedListItem { .. } => {
+                Block::BulletedListItem { .. }
+                | Block::NumberedListItem { .. }
+                | Block::ToDo { .. } => {
                     // This child AST should be wrapped with NodeValue::List
                     // So, AST have only one child, NodeValue::Item.
                     let ast = child.to_ast(arena);

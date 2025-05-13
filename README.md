@@ -1,13 +1,13 @@
-## Supported　Notion Block Types
+## Supported Notion Block Types
 - [x] `paragraph`
 - [x] `heading_1`
 - [x] `heading_2`
 - [x] `heading_3`
 - [x] `bulleted_list_item`
 - [x] `numbered_list_item`
-- [ ] `to_do`
-- [ ] `quote`
-- [ ] `divider`
+- [x] `to_do`
+- [x] `quote`
+- [x] `divider`
 - [ ] `image`
 - [ ] `file`
 - [ ] `pdf`

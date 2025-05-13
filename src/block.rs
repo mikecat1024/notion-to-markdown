@@ -4,20 +4,26 @@ use bulleted_list_item::BulletedListItem;
 use code::Code;
 use comrak::nodes::{Ast, AstNode, NodeValue};
 use comrak::Arena;
-use heading1::Heading1;
-use heading2::Heading2;
-use heading3::Heading3;
+use divider::Divider;
+use heading_1::Heading1;
+use heading_2::Heading2;
+use heading_3::Heading3;
 use numbered_list_item::NumberedListItem;
 use paragraph::Paragraph;
+use quote::Quote;
 use serde;
 use serde::Deserialize;
+use to_do::ToDo;
 pub mod bulleted_list_item;
 pub mod code;
-pub mod heading1;
-pub mod heading2;
-pub mod heading3;
+pub mod divider;
+pub mod heading_1;
+pub mod heading_2;
+pub mod heading_3;
 pub mod numbered_list_item;
 pub mod paragraph;
+pub mod quote;
+pub mod to_do;
 
 use crate::rich_text::RichText;
 
@@ -32,6 +38,13 @@ pub enum Block {
     Paragraph {
         #[serde(flatten)]
         paragraph: Paragraph,
+        #[serde(skip_serializing)]
+        #[serde(default = "Vec::new")]
+        children: Vec<Block>,
+    },
+    Quote {
+        #[serde(flatten)]
+        quote: Quote,
         #[serde(skip_serializing)]
         #[serde(default = "Vec::new")]
         children: Vec<Block>,
@@ -81,6 +94,20 @@ pub enum Block {
         #[serde(default = "Vec::new")]
         children: Vec<Block>,
     },
+    Divider {
+        #[serde(flatten)]
+        divider: Divider,
+        #[serde(skip_serializing)]
+        #[serde(default = "Vec::new")]
+        children: Vec<Block>,
+    },
+    ToDo {
+        #[serde(flatten)]
+        to_do: ToDo,
+        #[serde(skip_serializing)]
+        #[serde(default = "Vec::new")]
+        children: Vec<Block>,
+    },
     Unsupported,
     #[serde(other)]
     Unknown,
@@ -93,6 +120,7 @@ impl Block {
                 paragraph,
                 children,
             } => paragraph.to_ast(arena, children),
+            Block::Quote { quote, children } => quote.to_ast(arena, children),
             Block::Code { code, children } => code.to_ast(arena, children),
             Block::Heading1 {
                 heading_1,
@@ -114,6 +142,8 @@ impl Block {
                 numbered_list_item,
                 children,
             } => numbered_list_item.to_ast(arena, children),
+            Block::ToDo { to_do, children } => to_do.to_ast(arena, children),
+            Block::Divider { divider, children } => divider.to_ast(arena, children),
             Block::Unsupported => arena.alloc(AstNode::new(RefCell::new(Ast::new(
                 NodeValue::Raw(UNSUPPORTED_NODE_TEXT.into()),
                 Default::default(),
@@ -131,9 +161,12 @@ impl Block {
             | Block::Heading1 { children, .. }
             | Block::Heading2 { children, .. }
             | Block::Heading3 { children, .. }
+            | Block::Quote { children, .. }
+            | Block::Divider { children, .. }
             | Block::BulletedListItem { children, .. }
             | Block::NumberedListItem { children, .. }
-            | Block::Code { children, .. } => children.push(child),
+            | Block::Code { children, .. }
+            | Block::ToDo { children, .. } => children.push(child),
             Block::Unsupported | Block::Unknown => {}
         }
     }

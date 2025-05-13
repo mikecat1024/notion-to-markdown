@@ -4,21 +4,29 @@ use comrak::{
 };
 use serde::Deserialize;
 
-use super::{Block, BlockAst, BlockContent};
+use crate::rich_text::RichText;
+
+use super::{Block, BlockAst};
+
+#[derive(Deserialize, Clone, Debug)]
+pub struct ToDo {
+    to_do: ToDoContent,
+}
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct NumberedListItem {
-    numbered_list_item: BlockContent,
+pub struct ToDoContent {
+    pub rich_text: Vec<RichText>,
+    checked: bool,
 }
 
-impl BlockAst for NumberedListItem {
+impl BlockAst for ToDo {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, children: &Vec<Block>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(
             arena,
             NodeValue::List(NodeList {
-                list_type: ListType::Ordered,
-                is_task_list: false,
+                list_type: ListType::Bullet,
+                is_task_list: true,
                 bullet_char: b'-',
                 tight: true,
                 delimiter: ListDelimType::default(),
@@ -44,10 +52,32 @@ impl BlockAst for NumberedListItem {
         let paragraph = Self::create_node(arena, NodeValue::Paragraph);
 
         let text_asts: Vec<&'a AstNode<'a>> = self
-            .numbered_list_item
+            .to_do
             .rich_text
             .iter()
-            .map(|rich_text| rich_text.to_ast(&arena))
+            .enumerate()
+            .map(|(i, rich_text)| {
+                if i == 0 {
+                    let checked_x = if self.to_do.checked { "x" } else { " " };
+
+                    print!("{checked_x}");
+
+                    match rich_text {
+                        RichText::Text {
+                            plain_text,
+                            href,
+                            annotations,
+                        } => RichText::Text {
+                            plain_text: format!("[{}] {}", checked_x, plain_text),
+                            href: href.clone(),
+                            annotations: annotations.clone(),
+                        }
+                        .to_ast(&arena),
+                    }
+                } else {
+                    rich_text.to_ast(&arena)
+                }
+            })
             .flatten()
             .collect();
 
@@ -78,8 +108,8 @@ impl BlockAst for NumberedListItem {
             let list = Self::create_node(
                 arena,
                 NodeValue::List(NodeList {
-                    list_type: ListType::Ordered,
-                    is_task_list: false,
+                    list_type: ListType::Bullet,
+                    is_task_list: true,
                     bullet_char: b'-',
                     tight: true,
                     delimiter: ListDelimType::default(),
@@ -110,17 +140,15 @@ mod test {
     use crate::block::Block;
 
     #[test]
-    fn test_to_markdown() {
-        let item: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
-        ))
-        .unwrap();
+    fn test_to_markdown_when_unchecked() {
+        let paragraph: Block =
+            serde_json::from_str(include_str!("../tests/block/unchecked_to_do_response.json"))
+                .unwrap();
 
         let arena = Arena::new();
-        let ast = item.to_ast(&arena);
+        let ast = paragraph.to_ast(&arena);
 
         let mut options = Options::default();
-
         options.extension.strikethrough = true;
         options.extension.table = true;
         options.extension.tasklist = true;
@@ -132,34 +160,21 @@ mod test {
         assert_eq!(
             String::from_utf8(output).unwrap(),
             indoc! {r#"
-                - this is bulleted list item
+                - [ ] this is to do item
             "#}
         )
     }
 
     #[test]
-    fn test_to_markdown_with_nest() {
-        let mut parent_item: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
-        ))
-        .unwrap();
-        let child_item1: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
-        ))
-        .unwrap();
-        let child_item2: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
-        ))
-        .unwrap();
-
-        parent_item.append(child_item1);
-        parent_item.append(child_item2);
+    fn test_to_markdown_when_checked() {
+        let paragraph: Block =
+            serde_json::from_str(include_str!("../tests/block/checked_to_do_response.json"))
+                .unwrap();
 
         let arena = Arena::new();
-        let ast = parent_item.to_ast(&arena);
+        let ast = paragraph.to_ast(&arena);
 
         let mut options = Options::default();
-
         options.extension.strikethrough = true;
         options.extension.table = true;
         options.extension.tasklist = true;
@@ -171,9 +186,46 @@ mod test {
         assert_eq!(
             String::from_utf8(output).unwrap(),
             indoc! {r#"
-            - this is bulleted list item
-              - this is bulleted list item
-              - this is bulleted list item
+                - [x] this is to do item
+            "#}
+        )
+    }
+
+    #[test]
+    fn test_to_markdown_when_nest() {
+        let mut item: Block =
+            serde_json::from_str(include_str!("../tests/block/checked_to_do_response.json"))
+                .unwrap();
+
+        let child1: Block =
+            serde_json::from_str(include_str!("../tests/block/unchecked_to_do_response.json"))
+                .unwrap();
+
+        let child2: Block =
+            serde_json::from_str(include_str!("../tests/block/checked_to_do_response.json"))
+                .unwrap();
+
+        item.append(child1);
+        item.append(child2);
+
+        let arena = Arena::new();
+        let ast = item.to_ast(&arena);
+
+        let mut options = Options::default();
+        options.extension.strikethrough = true;
+        options.extension.table = true;
+        options.extension.tasklist = true;
+        options.extension.autolink = true;
+
+        let mut output = vec![];
+        format_commonmark(ast, &options, &mut output).unwrap();
+
+        assert_eq!(
+            String::from_utf8(output).unwrap(),
+            indoc! {r#"
+                - [x] this is to do item
+                  - [ ] this is to do item
+                  - [x] this is to do item
             "#}
         )
     }

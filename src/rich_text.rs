@@ -99,7 +99,7 @@ impl RichText {
             ))))
         } else {
             arena.alloc(Node::new(RefCell::new(Ast::new(
-                NodeValue::Text(trimmed_content.clone()),
+                NodeValue::Raw(trimmed_content.clone()),
                 Default::default(),
             ))))
         };
