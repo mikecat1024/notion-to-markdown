@@ -1,5 +1,5 @@
 use comrak::{
-    nodes::{AstNode, NodeCode, NodeCodeBlock, NodeHeading, NodeMultilineBlockQuote, NodeValue},
+    nodes::{AstNode, NodeCodeBlock, NodeValue},
     Arena,
 };
 use serde::Deserialize;

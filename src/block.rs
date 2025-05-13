@@ -21,7 +21,8 @@ pub mod paragraph;
 
 use crate::rich_text::RichText;
 
-const UNSUPPORTED_NODE_TEXT: &str = "<!-- unsupported_block -->";
+const UNSUPPORTED_NODE_TEXT: &str = "<!-- unsupported block -->";
+const UNKNOWN_NODE_TEXT: &str = "<!-- unknown block -->";
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "type")]
@@ -80,8 +81,9 @@ pub enum Block {
         #[serde(default = "Vec::new")]
         children: Vec<Block>,
     },
-    #[serde(other)]
     Unsupported,
+    #[serde(other)]
+    Unknown,
 }
 
 impl Block {
@@ -116,6 +118,10 @@ impl Block {
                 NodeValue::Raw(UNSUPPORTED_NODE_TEXT.into()),
                 Default::default(),
             )))),
+            Block::Unknown => arena.alloc(AstNode::new(RefCell::new(Ast::new(
+                NodeValue::Raw(UNKNOWN_NODE_TEXT.into()),
+                Default::default(),
+            )))),
         }
     }
 
@@ -128,7 +134,7 @@ impl Block {
             | Block::BulletedListItem { children, .. }
             | Block::NumberedListItem { children, .. }
             | Block::Code { children, .. } => children.push(child),
-            Block::Unsupported => {}
+            Block::Unsupported | Block::Unknown => {}
         }
     }
 }

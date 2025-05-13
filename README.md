@@ -1,0 +1,17 @@
+## Supported　Notion Block Types
+- [x] `paragraph`
+- [x] `heading_1`
+- [x] `heading_2`
+- [x] `heading_3`
+- [x] `bulleted_list_item`
+- [x] `numbered_list_item`
+- [ ] `to_do`
+- [ ] `quote`
+- [ ] `divider`
+- [ ] `image`
+- [ ] `file`
+- [ ] `pdf`
+- [ ] `bookmark`
+- [ ] `callout`
+- [ ] `equation`
+- [ ] `table` + `table_row`
