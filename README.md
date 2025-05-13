@@ -15,3 +15,17 @@
 - [ ] `callout`
 - [ ] `equation`
 - [ ] `table` + `table_row`
+- [ ] `child_page`
+- [ ] `child_database`
+- [ ] `embed`
+- [ ] `link_preview`
+- [ ] `link_to_page`
+- [ ] `breadcrumb`
+- [ ] `column`
+- [ ] `column_list`
+- [ ] `synced_block`
+- [ ] `toggle`
+- [ ] `template`
+- [ ] `table_of_contents`
+- [ ] `unsupported`
+- [ ] `video`
