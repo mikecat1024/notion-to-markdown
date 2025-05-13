@@ -77,8 +77,8 @@ mod test {
             String::from_utf8(output).unwrap(),
             indoc! {r#"
             - this is bulleted list item
-              - this is second bulleted list item
-              - this is second bulleted list item
+              - this is bulleted list item
+              - this is bulleted list item
             "#}
         )
     }
@@ -118,8 +118,8 @@ mod test {
             String::from_utf8(output).unwrap(),
             indoc! {r#"
             1. this is numbered list item
-               1. this is second numbered list item
-               2. this is second numbered list item
+               1. this is numbered list item
+               2. this is numbered list item
             "#}
         )
     }

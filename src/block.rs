@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 
 use bulleted_list_item::BulletedListItem;
+use code::Code;
 use comrak::nodes::{Ast, AstNode, NodeValue};
 use comrak::Arena;
 use heading1::Heading1;
@@ -11,6 +12,7 @@ use paragraph::Paragraph;
 use serde;
 use serde::Deserialize;
 pub mod bulleted_list_item;
+pub mod code;
 pub mod heading1;
 pub mod heading2;
 pub mod heading3;
@@ -29,6 +31,13 @@ pub enum Block {
     Paragraph {
         #[serde(flatten)]
         paragraph: Paragraph,
+        #[serde(skip_serializing)]
+        #[serde(default = "Vec::new")]
+        children: Vec<Block>,
+    },
+    Code {
+        #[serde(flatten)]
+        code: Code,
         #[serde(skip_serializing)]
         #[serde(default = "Vec::new")]
         children: Vec<Block>,
@@ -82,6 +91,7 @@ impl Block {
                 paragraph,
                 children,
             } => paragraph.to_ast(arena, children),
+            Block::Code { code, children } => code.to_ast(arena, children),
             Block::Heading1 {
                 heading_1,
                 children,
@@ -116,7 +126,8 @@ impl Block {
             | Block::Heading2 { children, .. }
             | Block::Heading3 { children, .. }
             | Block::BulletedListItem { children, .. }
-            | Block::NumberedListItem { children, .. } => children.push(child),
+            | Block::NumberedListItem { children, .. }
+            | Block::Code { children, .. } => children.push(child),
             Block::Unsupported => {}
         }
     }
