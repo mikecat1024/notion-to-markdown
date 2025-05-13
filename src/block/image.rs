@@ -1,32 +1,36 @@
 use comrak::{
-    nodes::{AstNode, NodeValue},
+    nodes::{AstNode, NodeLink, NodeValue},
     Arena,
 };
 use serde::Deserialize;
 
-use super::{Block, BlockAst, BlockContent};
+use super::{Block, BlockAst};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct Paragraph {
-    paragraph: BlockContent,
+pub struct Image {
+    image: ImageContent,
+}
+#[derive(Deserialize, Clone, Debug)]
+
+struct ImageContent {
+    file: FileUrl,
+}
+#[derive(Deserialize, Clone, Debug)]
+
+struct FileUrl {
+    url: String,
 }
 
-impl BlockAst for Paragraph {
+impl BlockAst for Image {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
-        let wrapper = Self::create_node(arena, NodeValue::Paragraph);
-
-        let rich_text_asts: Vec<&'a AstNode<'a>> = self
-            .paragraph
-            .rich_text
-            .iter()
-            .map(|rich_text| rich_text.to_ast(&arena))
-            .flatten()
-            .collect();
-
-        rich_text_asts.iter().for_each(|ast| wrapper.append(ast));
-
-        wrapper
+        Self::create_node(
+            arena,
+            NodeValue::Image(NodeLink {
+                url: self.image.file.url.clone(),
+                title: String::new(), // The title always empty string
+            }),
+        )
     }
 }
 
@@ -41,11 +45,11 @@ mod test {
 
     #[test]
     fn test_to_markdown() {
-        let paragraph: Block =
-            serde_json::from_str(include_str!("../tests/block/paragraph_response.json")).unwrap();
+        let item: Block =
+            serde_json::from_str(include_str!("../tests/block/image_response.json")).unwrap();
 
         let arena = Arena::new();
-        let ast = paragraph.to_ast(&arena);
+        let ast = item.to_ast(&arena);
 
         let mut options = Options::default();
         options.extension.strikethrough = true;
@@ -59,7 +63,7 @@ mod test {
         assert_eq!(
             String::from_utf8(output).unwrap(),
             indoc! {r#"
-                this is paragraph
+                ![](https://picsum.photos/200/300)
             "#}
         )
     }

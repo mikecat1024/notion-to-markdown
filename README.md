@@ -8,9 +8,9 @@
 - [x] `to_do`
 - [x] `quote`
 - [x] `divider`
-- [ ] `image`
-- [ ] `file`
-- [ ] `pdf`
+- [x] `image`
+- [x] `file`
+- [x] `pdf`
 - [ ] `bookmark`
 - [ ] `callout`
 - [ ] `equation`

@@ -5,11 +5,14 @@ use code::Code;
 use comrak::nodes::{Ast, AstNode, NodeValue};
 use comrak::Arena;
 use divider::Divider;
+use file::File;
 use heading_1::Heading1;
 use heading_2::Heading2;
 use heading_3::Heading3;
+use image::Image;
 use numbered_list_item::NumberedListItem;
 use paragraph::Paragraph;
+use pdf::Pdf;
 use quote::Quote;
 use serde;
 use serde::Deserialize;
@@ -17,11 +20,14 @@ use to_do::ToDo;
 pub mod bulleted_list_item;
 pub mod code;
 pub mod divider;
+pub mod file;
 pub mod heading_1;
 pub mod heading_2;
 pub mod heading_3;
+pub mod image;
 pub mod numbered_list_item;
 pub mod paragraph;
+pub mod pdf;
 pub mod quote;
 pub mod to_do;
 
@@ -38,6 +44,13 @@ pub enum Block {
     Paragraph {
         #[serde(flatten)]
         paragraph: Paragraph,
+        #[serde(skip_serializing)]
+        #[serde(default = "Vec::new")]
+        children: Vec<Block>,
+    },
+    Pdf {
+        #[serde(flatten)]
+        pdf: Pdf,
         #[serde(skip_serializing)]
         #[serde(default = "Vec::new")]
         children: Vec<Block>,
@@ -87,6 +100,13 @@ pub enum Block {
         #[serde(default = "Vec::new")]
         children: Vec<Block>,
     },
+    Image {
+        #[serde(flatten)]
+        image: Image,
+        #[serde(skip_serializing)]
+        #[serde(default = "Vec::new")]
+        children: Vec<Block>,
+    },
     NumberedListItem {
         #[serde(flatten)]
         numbered_list_item: NumberedListItem,
@@ -97,6 +117,13 @@ pub enum Block {
     Divider {
         #[serde(flatten)]
         divider: Divider,
+        #[serde(skip_serializing)]
+        #[serde(default = "Vec::new")]
+        children: Vec<Block>,
+    },
+    File {
+        #[serde(flatten)]
+        file: File,
         #[serde(skip_serializing)]
         #[serde(default = "Vec::new")]
         children: Vec<Block>,
@@ -121,7 +148,9 @@ impl Block {
                 children,
             } => paragraph.to_ast(arena, children),
             Block::Quote { quote, children } => quote.to_ast(arena, children),
+            Block::Pdf { pdf, children } => pdf.to_ast(arena, children),
             Block::Code { code, children } => code.to_ast(arena, children),
+            Block::File { file, children } => file.to_ast(arena, children),
             Block::Heading1 {
                 heading_1,
                 children,
@@ -142,6 +171,7 @@ impl Block {
                 numbered_list_item,
                 children,
             } => numbered_list_item.to_ast(arena, children),
+            Block::Image { image, children } => image.to_ast(arena, children),
             Block::ToDo { to_do, children } => to_do.to_ast(arena, children),
             Block::Divider { divider, children } => divider.to_ast(arena, children),
             Block::Unsupported => arena.alloc(AstNode::new(RefCell::new(Ast::new(
@@ -161,6 +191,9 @@ impl Block {
             | Block::Heading1 { children, .. }
             | Block::Heading2 { children, .. }
             | Block::Heading3 { children, .. }
+            | Block::Pdf { children, .. }
+            | Block::Image { children, .. }
+            | Block::File { children, .. }
             | Block::Quote { children, .. }
             | Block::Divider { children, .. }
             | Block::BulletedListItem { children, .. }
