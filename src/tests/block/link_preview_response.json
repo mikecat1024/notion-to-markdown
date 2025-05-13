@@ -18,14 +18,9 @@
     "has_children": false,
     "archived": false,
     "in_trash": false,
-    "type": "image",
-    "image": {
-        "caption": [],
-        "type": "file",
-        "file": {
-            "url": "https://picsum.photos/200/300",
-            "expiry_time": "2000-01-01T00:00:00.000Z"
-        }
+    "type": "link_preview",
+    "link_preview": {
+        "url": "https://github.com/mikecat1024/notion-to-markdown.git"
     },
     "request_id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 }

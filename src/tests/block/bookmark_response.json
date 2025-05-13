@@ -18,29 +18,10 @@
     "has_children": false,
     "archived": false,
     "in_trash": false,
-    "type": "code",
-    "code": {
+    "type": "bookmark",
+    "bookmark": {
         "caption": [],
-        "rich_text": [
-            {
-                "type": "text",
-                "text": {
-                    "content": "this is markdown code",
-                    "link": null
-                },
-                "annotations": {
-                    "bold": false,
-                    "italic": false,
-                    "strikethrough": false,
-                    "underline": false,
-                    "code": false,
-                    "color": "default"
-                },
-                "plain_text": "this is markdown code",
-                "href": null
-            }
-        ],
-        "language": "markdown"
+        "url": "https://example.com"
     },
     "request_id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 }

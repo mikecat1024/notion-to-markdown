@@ -18,14 +18,7 @@
     "has_children": false,
     "archived": false,
     "in_trash": false,
-    "type": "image",
-    "image": {
-        "caption": [],
-        "type": "file",
-        "file": {
-            "url": "https://picsum.photos/200/300",
-            "expiry_time": "2000-01-01T00:00:00.000Z"
-        }
-    },
+    "type": "breadcrumb",
+    "breadcrumb": {},
     "request_id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 }
