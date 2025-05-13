@@ -18,14 +18,10 @@ pub fn main() {
 
     let mut numbered_parent_item: Block =
         serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json")).unwrap();
-    let numbered_child_item1: Block = serde_json::from_str(include_str!(
-        "tests/block/numbered_list_item_child_response.json"
-    ))
-    .unwrap();
-    let numbered_child_item2: Block = serde_json::from_str(include_str!(
-        "tests/block/numbered_list_item_child_response.json"
-    ))
-    .unwrap();
+    let numbered_child_item1: Block =
+        serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json")).unwrap();
+    let numbered_child_item2: Block =
+        serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json")).unwrap();
 
     numbered_parent_item.append(numbered_child_item1);
     numbered_parent_item.append(numbered_child_item2);

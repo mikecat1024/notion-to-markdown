@@ -47,14 +47,12 @@ mod test {
         let mut parent_item: Block =
             serde_json::from_str(include_str!("tests/block/bulleted_list_item_response.json"))
                 .unwrap();
-        let child_item1: Block = serde_json::from_str(include_str!(
-            "tests/block/bulleted_list_item_child_response.json"
-        ))
-        .unwrap();
-        let child_item2: Block = serde_json::from_str(include_str!(
-            "tests/block/bulleted_list_item_child_response.json"
-        ))
-        .unwrap();
+        let child_item1: Block =
+            serde_json::from_str(include_str!("tests/block/bulleted_list_item_response.json"))
+                .unwrap();
+        let child_item2: Block =
+            serde_json::from_str(include_str!("tests/block/bulleted_list_item_response.json"))
+                .unwrap();
 
         parent_item.append(child_item1);
         parent_item.append(child_item2);
@@ -90,14 +88,12 @@ mod test {
         let mut numbered_parent_item: Block =
             serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json"))
                 .unwrap();
-        let numbered_child_item1: Block = serde_json::from_str(include_str!(
-            "tests/block/numbered_list_item_child_response.json"
-        ))
-        .unwrap();
-        let numbered_child_item2: Block = serde_json::from_str(include_str!(
-            "tests/block/numbered_list_item_child_response.json"
-        ))
-        .unwrap();
+        let numbered_child_item1: Block =
+            serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json"))
+                .unwrap();
+        let numbered_child_item2: Block =
+            serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json"))
+                .unwrap();
 
         numbered_parent_item.append(numbered_child_item1);
         numbered_parent_item.append(numbered_child_item2);
@@ -143,7 +139,6 @@ mod test {
 
         let page = Page::from_blocks(vec![headline1, headline2, headline3, paragraph]);
 
-        // println!("{:#?}", pages);
         let ast = page.to_ast(&arena);
 
         let mut options = Options::default();

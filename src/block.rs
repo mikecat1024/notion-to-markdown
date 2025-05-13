@@ -122,19 +122,6 @@ impl Block {
     }
 }
 
-#[derive(Deserialize, Clone, Debug)]
-#[serde(rename_all = "snake_case")]
-pub struct BlockContent {
-    pub rich_text: Vec<RichText>,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "snake_case")]
-enum ParentType {
-    PageId,
-    BlockId,
-}
-
 pub trait BlockAst {
     fn create_node<'a>(arena: &'a Arena<AstNode<'a>>, node_value: NodeValue) -> &'a AstNode<'a> {
         arena.alloc(AstNode::new(RefCell::new(Ast::new(
@@ -144,4 +131,10 @@ pub trait BlockAst {
     }
 
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, children: &Vec<Block>) -> &'a AstNode<'a>;
+}
+
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct BlockContent {
+    pub rich_text: Vec<RichText>,
 }
