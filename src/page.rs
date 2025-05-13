@@ -6,49 +6,17 @@ use comrak::{
 };
 use serde::Deserialize;
 
-use crate::block::{Block, BlockCommon, Parent};
+use crate::block::Block;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct Page {
-    blocks: Vec<Block>,
+    pub blocks: Vec<Block>,
 }
 
 impl Page {
-    fn struct_blocks(blocks: Vec<Block>) -> Vec<Block> {
-        blocks
-            .iter()
-            .map(|parent| {
-                let children: Vec<Block> = blocks
-                    .iter()
-                    .filter(|block| match &block.common.parent {
-                        Parent::BlockId { block_id } => block_id == &parent.common.id,
-                        _ => false,
-                    })
-                    .cloned()
-                    .collect();
-
-                let node = parent.clone();
-
-                Block {
-                    common: BlockCommon {
-                        children,
-                        ..node.common
-                    },
-                    variant: node.variant,
-                }
-            })
-            .filter(|block| match &block.common.parent {
-                Parent::BlockId { .. } => false,
-                _ => true,
-            })
-            .collect()
-    }
-
     pub fn from_blocks(blocks: Vec<Block>) -> Page {
-        Page {
-            blocks: Self::struct_blocks(blocks),
-        }
+        return Page { blocks };
     }
 
     pub fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
@@ -67,14 +35,16 @@ impl Page {
 
 #[cfg(test)]
 mod test {
+
     use super::{Block, Page};
     use comrak::{format_commonmark, Arena, Options};
     use indoc::indoc;
+    use pretty_assertions::assert_eq;
     use rstest::rstest;
 
     #[test]
     fn test_page_with_bulleted_item() {
-        let parent_item: Block =
+        let mut parent_item: Block =
             serde_json::from_str(include_str!("tests/block/bulleted_list_item_response.json"))
                 .unwrap();
         let child_item1: Block = serde_json::from_str(include_str!(
@@ -86,9 +56,12 @@ mod test {
         ))
         .unwrap();
 
+        parent_item.append(child_item1);
+        parent_item.append(child_item2);
+
         let arena = Arena::new();
 
-        let page = Page::from_blocks(vec![parent_item, child_item1, child_item2]);
+        let page = Page::from_blocks(vec![parent_item]);
 
         let ast = page.to_ast(&arena);
 
@@ -114,7 +87,7 @@ mod test {
 
     #[rstest]
     fn test_page_with_numbered_item() {
-        let numbered_parent_item: Block =
+        let mut numbered_parent_item: Block =
             serde_json::from_str(include_str!("tests/block/numbered_list_item_response.json"))
                 .unwrap();
         let numbered_child_item1: Block = serde_json::from_str(include_str!(
@@ -126,13 +99,12 @@ mod test {
         ))
         .unwrap();
 
+        numbered_parent_item.append(numbered_child_item1);
+        numbered_parent_item.append(numbered_child_item2);
+
         let arena = Arena::new();
 
-        let page = Page::from_blocks(vec![
-            numbered_parent_item,
-            numbered_child_item1,
-            numbered_child_item2,
-        ]);
+        let page = Page::from_blocks(vec![numbered_parent_item]);
 
         let ast = page.to_ast(&arena);
 
@@ -171,7 +143,7 @@ mod test {
 
         let page = Page::from_blocks(vec![headline1, headline2, headline3, paragraph]);
 
-        println!("{:#?}", page.blocks);
+        // println!("{:#?}", pages);
         let ast = page.to_ast(&arena);
 
         let mut options = Options::default();
