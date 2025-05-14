@@ -11,11 +11,11 @@ use super::BlockAstWithoutChildren;
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct ChildDatabase {
-    child_database: ChildPageContent,
+    child_database: ChildDatabaseContent,
 }
 #[derive(Deserialize, Clone, Debug)]
 
-struct ChildPageContent {
+struct ChildDatabaseContent {
     title: String,
 }
 
@@ -26,7 +26,7 @@ impl BlockAstWithoutChildren for ChildDatabase {
         let wrapper = Self::create_node(
             arena,
             NodeValue::Link(NodeLink {
-                url: format!("{}.md", title),
+                url: format!("{}/{}.md", title, title),
                 title: String::new(), // The title always empty string
             }),
         );
@@ -69,7 +69,7 @@ mod test {
         assert_eq!(
             String::from_utf8(output).unwrap(),
             indoc! {r#"
-                [this is child database](this_is_child_database.md)
+                [this is child database](this_is_child_database/this_is_child_database.md)
             "#}
         )
     }

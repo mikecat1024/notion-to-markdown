@@ -9,12 +9,15 @@ use code::Code;
 use comrak::nodes::{Ast, AstNode, NodeValue};
 use comrak::Arena;
 use divider::Divider;
+use embed::Embed;
 use equation::Equation;
 use file::File;
 use heading_1::Heading1;
 use heading_2::Heading2;
 use heading_3::Heading3;
 use image::Image;
+use link_preview::LinkPreview;
+// use link_to_page::LinkToPage;
 use numbered_list_item::NumberedListItem;
 use paragraph::Paragraph;
 use pdf::Pdf;
@@ -30,12 +33,15 @@ pub mod child_database;
 pub mod child_page;
 pub mod code;
 pub mod divider;
+pub mod embed;
 pub mod equation;
 pub mod file;
 pub mod heading_1;
 pub mod heading_2;
 pub mod heading_3;
 pub mod image;
+pub mod link_preview;
+// pub mod link_to_page;
 pub mod numbered_list_item;
 pub mod paragraph;
 pub mod pdf;
@@ -162,6 +168,18 @@ pub enum Block {
         #[serde(flatten)]
         table_row: TableRow,
     },
+    Embed {
+        #[serde(flatten)]
+        embed: Embed,
+    },
+    LinkPreview {
+        #[serde(flatten)]
+        link_preview: LinkPreview,
+    },
+    // LinkToPage {
+    //     #[serde(flatten)]
+    //     link_to_page: LinkToPage,
+    // },
     ChildDatabase {
         #[serde(flatten)]
         child_database: ChildDatabase,
@@ -209,12 +227,15 @@ impl Block {
             )))),
             Block::ChildDatabase { child_database, .. } => child_database.to_ast(arena),
             Block::Image { image, .. } => image.to_ast(arena),
+            Block::LinkPreview { link_preview, .. } => link_preview.to_ast(arena),
             Block::Divider { divider, .. } => divider.to_ast(arena),
             Block::ChildPage { child_page, .. } => child_page.to_ast(arena),
             Block::Equation { equation, .. } => equation.to_ast(arena),
             Block::Pdf { pdf, .. } => pdf.to_ast(arena),
+            // Block::LinkToPage { link_to_page } => link_to_page.to_ast(arena),
             Block::Code { code, .. } => code.to_ast(arena),
             Block::Bookmark { bookmark, .. } => bookmark.to_ast(arena),
+            Block::Embed { embed, .. } => embed.to_ast(arena),
             Block::File { file, .. } => file.to_ast(arena),
             Block::Unexpected | Block::TableRow { .. } => {
                 arena.alloc(AstNode::new(RefCell::new(Ast::new(

@@ -8,29 +8,26 @@ use super::BlockAstWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct Bookmark {
-    bookmark: BookmarkContent,
+pub struct LinkPreview {
+    link_preview: LinkPreviewContent,
 }
 #[derive(Deserialize, Clone, Debug)]
 
-struct BookmarkContent {
+struct LinkPreviewContent {
     url: String,
 }
 
-impl BlockAstWithoutChildren for Bookmark {
+impl BlockAstWithoutChildren for LinkPreview {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(
             arena,
             NodeValue::Link(NodeLink {
-                url: self.bookmark.url.to_string(),
+                url: self.link_preview.url.to_string(),
                 title: String::new(), // The title always empty string
             }),
         );
 
-        let name = Self::create_node(
-            arena,
-            NodeValue::Text(format!("Bookmark: {}", self.bookmark.url)),
-        );
+        let name = Self::create_node(arena, NodeValue::Text(self.link_preview.url.to_string()));
 
         wrapper.append(name);
 
@@ -50,7 +47,8 @@ mod test {
     #[test]
     fn test_to_markdown() {
         let item: Block =
-            serde_json::from_str(include_str!("../tests/block/bookmark_response.json")).unwrap();
+            serde_json::from_str(include_str!("../tests/block/link_preview_response.json"))
+                .unwrap();
 
         let arena = Arena::new();
         let ast = item.to_ast(&arena);
@@ -67,7 +65,7 @@ mod test {
         assert_eq!(
             String::from_utf8(output).unwrap(),
             indoc! {r#"
-                [Bookmark: https://example.com](https://example.com)
+                <https://example.com>
             "#}
         )
     }

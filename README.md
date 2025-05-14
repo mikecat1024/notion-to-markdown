@@ -17,8 +17,8 @@
 - [x] `table` + `table_row`
 - [x] `child_page`
 - [x] `child_database`
-- [ ] `embed`
-- [ ] `link_preview`
+- [x] `embed`
+- [x] `link_preview`
 - [ ] `link_to_page`
 - [ ] `breadcrumb`
 - [ ] `column`
