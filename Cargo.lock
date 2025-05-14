@@ -490,6 +490,7 @@ dependencies = [
  "comrak",
  "indoc",
  "pretty_assertions",
+ "regex",
  "rstest",
  "serde",
  "serde_json",

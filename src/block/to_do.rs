@@ -60,8 +60,6 @@ impl BlockAst for ToDo {
                 if i == 0 {
                     let checked_x = if self.to_do.checked { "x" } else { " " };
 
-                    print!("{checked_x}");
-
                     match rich_text {
                         RichText::Text {
                             plain_text,

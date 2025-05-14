@@ -4,6 +4,7 @@ use page::Page;
 
 mod block;
 mod page;
+mod utils;
 mod rich_text;
 
 pub fn main() {

@@ -20,7 +20,7 @@
     "in_trash": false,
     "type": "table",
     "table": {
-        "table_width": 2,
+        "table_width": 3,
         "has_column_header": true,
         "has_row_header": false
     },

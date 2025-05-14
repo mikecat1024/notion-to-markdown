@@ -11,12 +11,12 @@
 - [x] `image`
 - [x] `file`
 - [x] `pdf`
-- [ ] `bookmark`
-- [ ] `callout`
-- [ ] `equation`
-- [ ] `table` + `table_row`
-- [ ] `child_page`
-- [ ] `child_database`
+- [x] `bookmark`
+- [x] `callout`
+- [x] `equation`
+- [x] `table` + `table_row`
+- [x] `child_page`
+- [x] `child_database`
 - [ ] `embed`
 - [ ] `link_preview`
 - [ ] `link_to_page`
@@ -27,5 +27,5 @@
 - [ ] `toggle`
 - [ ] `template`
 - [ ] `table_of_contents`
-- [ ] `unsupported`
+- [x] `unsupported`
 - [ ] `video`
