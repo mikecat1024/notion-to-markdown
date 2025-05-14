@@ -4,6 +4,8 @@ use comrak::{
 };
 use serde::Deserialize;
 
+use crate::rich_text::RichTextVec;
+
 use super::{Block, BlockAst, BlockContent};
 
 #[derive(Deserialize, Clone, Debug)]
@@ -22,15 +24,11 @@ impl BlockAst for Heading2 {
             }),
         );
 
-        let rich_text_asts: Vec<&'a AstNode<'a>> = self
-            .heading_2
+        self.heading_2
             .rich_text
+            .to_ast(arena)
             .iter()
-            .map(|rich_text| rich_text.to_ast(&arena))
-            .flatten()
-            .collect();
-
-        rich_text_asts.iter().for_each(|ast| wrapper.append(ast));
+            .for_each(|ast| wrapper.append(ast));
 
         wrapper
     }

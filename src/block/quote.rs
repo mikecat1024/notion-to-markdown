@@ -4,6 +4,8 @@ use comrak::{
 };
 use serde::Deserialize;
 
+use crate::rich_text::RichTextVec;
+
 use super::{Block, BlockAst, BlockContent};
 
 #[derive(Deserialize, Clone, Debug)]
@@ -17,15 +19,12 @@ impl BlockAst for Quote {
         let wrapper = Self::create_node(arena, NodeValue::BlockQuote);
         let paragraph = Self::create_node(arena, NodeValue::Paragraph);
 
-        let rich_text_asts: Vec<&'a AstNode<'a>> = self
-            .quote
+        self.quote
             .rich_text
+            .to_ast(arena)
             .iter()
-            .map(|rich_text| rich_text.to_ast(&arena))
-            .flatten()
-            .collect();
+            .for_each(|ast| paragraph.append(ast));
 
-        rich_text_asts.iter().for_each(|ast| paragraph.append(ast));
         wrapper.append(paragraph);
 
         wrapper

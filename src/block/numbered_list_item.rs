@@ -4,6 +4,8 @@ use comrak::{
 };
 use serde::Deserialize;
 
+use crate::rich_text::RichTextVec;
+
 use super::{Block, BlockAst, BlockContent};
 
 #[derive(Deserialize, Clone, Debug)]
@@ -43,15 +45,11 @@ impl BlockAst for NumberedListItem {
 
         let paragraph = Self::create_node(arena, NodeValue::Paragraph);
 
-        let text_asts: Vec<&'a AstNode<'a>> = self
-            .numbered_list_item
+        self.numbered_list_item
             .rich_text
+            .to_ast(arena)
             .iter()
-            .map(|rich_text| rich_text.to_ast(&arena))
-            .flatten()
-            .collect();
-
-        text_asts.iter().for_each(|ast| paragraph.append(ast));
+            .for_each(|ast| paragraph.append(ast));
 
         item.append(paragraph);
 

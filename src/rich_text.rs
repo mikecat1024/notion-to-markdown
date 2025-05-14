@@ -202,3 +202,16 @@ impl RichText {
         }
     }
 }
+
+pub trait RichTextVec {
+    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> Vec<&'a AstNode<'a>>;
+}
+
+impl RichTextVec for Vec<RichText> {
+    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> Vec<&'a AstNode<'a>> {
+        self.iter()
+            .map(|rich_text| rich_text.to_ast(&arena))
+            .flatten()
+            .collect()
+    }
+}

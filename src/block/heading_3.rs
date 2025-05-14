@@ -1,10 +1,10 @@
+use super::{Block, BlockAst, BlockContent};
+use crate::rich_text::RichTextVec;
 use comrak::{
     nodes::{AstNode, NodeHeading, NodeValue},
     Arena,
 };
 use serde::Deserialize;
-
-use super::{Block, BlockAst, BlockContent};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -22,15 +22,11 @@ impl BlockAst for Heading3 {
             }),
         );
 
-        let rich_text_asts: Vec<&'a AstNode<'a>> = self
-            .heading_3
+        self.heading_3
             .rich_text
+            .to_ast(arena)
             .iter()
-            .map(|rich_text| rich_text.to_ast(&arena))
-            .flatten()
-            .collect();
-
-        rich_text_asts.iter().for_each(|ast| wrapper.append(ast));
+            .for_each(|ast| wrapper.append(ast));
 
         wrapper
     }

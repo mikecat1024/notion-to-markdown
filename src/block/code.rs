@@ -22,9 +22,6 @@ pub struct CodeContent {
 
 impl BlockAst for Code {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
-        // Markdown formatting such as **bold** or ~~strikethrough~~ does not render inside code blocks.
-        // All text is treated as plain code.
-
         Self::create_node(
             arena,
             NodeValue::CodeBlock(NodeCodeBlock {
