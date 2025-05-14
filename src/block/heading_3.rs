@@ -1,4 +1,4 @@
-use super::{Block, BlockAst, BlockContent};
+use super::{Block, BlockAstWithChildren, BlockContent};
 use crate::rich_text::RichTextVec;
 use comrak::{
     nodes::{AstNode, NodeHeading, NodeValue},
@@ -12,7 +12,7 @@ pub struct Heading3 {
     heading_3: BlockContent,
 }
 
-impl BlockAst for Heading3 {
+impl BlockAstWithChildren for Heading3 {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(
             arena,

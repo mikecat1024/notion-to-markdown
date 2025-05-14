@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichText;
 
-use super::{Block, BlockAst};
+use super::BlockAstWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Code {
@@ -20,8 +20,8 @@ pub struct CodeContent {
     pub language: String,
 }
 
-impl BlockAst for Code {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
+impl BlockAstWithoutChildren for Code {
+    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
         Self::create_node(
             arena,
             NodeValue::CodeBlock(NodeCodeBlock {

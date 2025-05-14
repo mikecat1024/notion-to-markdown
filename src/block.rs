@@ -57,36 +57,30 @@ pub enum Block {
         #[serde(flatten)]
         paragraph: Paragraph,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     Pdf {
         #[serde(flatten)]
         pdf: Pdf,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     Quote {
         #[serde(flatten)]
         quote: Quote,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     Code {
         #[serde(flatten)]
         code: Code,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     #[serde(rename = "heading_1")]
     Heading1 {
         #[serde(flatten)]
         heading_1: Heading1,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     #[serde(rename = "heading_2")]
@@ -94,7 +88,7 @@ pub enum Block {
         #[serde(flatten)]
         heading_2: Heading2,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     #[serde(rename = "heading_3")]
@@ -102,99 +96,75 @@ pub enum Block {
         #[serde(flatten)]
         heading_3: Heading3,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     BulletedListItem {
         #[serde(flatten)]
         bulleted_list_item: BulletedListItem,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     Image {
         #[serde(flatten)]
         image: Image,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     NumberedListItem {
         #[serde(flatten)]
         numbered_list_item: NumberedListItem,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     Divider {
         #[serde(flatten)]
         divider: Divider,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     File {
         #[serde(flatten)]
         file: File,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     ToDo {
         #[serde(flatten)]
         to_do: ToDo,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     Bookmark {
         #[serde(flatten)]
         bookmark: Bookmark,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     Callout {
         #[serde(flatten)]
         callout: Callout,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     ChildPage {
         #[serde(flatten)]
         child_page: ChildPage,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     Equation {
         #[serde(flatten)]
         equation: Equation,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     Table {
         #[serde(flatten)]
         table: Table,
         #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
+        #[serde(default)]
         children: Vec<Block>,
     },
     TableRow {
         #[serde(flatten)]
         table_row: TableRow,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     ChildDatabase {
         #[serde(flatten)]
         child_database: ChildDatabase,
-        #[serde(skip_serializing)]
-        #[serde(default = "Vec::new")]
-        children: Vec<Block>,
     },
     Unsupported,
     #[serde(other)]
@@ -209,16 +179,8 @@ impl Block {
                 children,
             } => paragraph.to_ast(arena, children),
             Block::Quote { quote, children } => quote.to_ast(arena, children),
-            Block::ChildPage {
-                child_page,
-                children,
-            } => child_page.to_ast(arena, children),
             Block::Table { table, children } => table.to_ast(arena, children),
-            Block::Equation { equation, children } => equation.to_ast(arena, children),
-            Block::Pdf { pdf, children } => pdf.to_ast(arena, children),
-            Block::Code { code, children } => code.to_ast(arena, children),
-            Block::Bookmark { bookmark, children } => bookmark.to_ast(arena, children),
-            Block::File { file, children } => file.to_ast(arena, children),
+
             Block::Callout { callout, children } => callout.to_ast(arena, children),
             Block::Heading1 {
                 heading_1,
@@ -240,17 +202,20 @@ impl Block {
                 numbered_list_item,
                 children,
             } => numbered_list_item.to_ast(arena, children),
-            Block::Image { image, children } => image.to_ast(arena, children),
             Block::ToDo { to_do, children } => to_do.to_ast(arena, children),
-            Block::Divider { divider, children } => divider.to_ast(arena, children),
-            Block::ChildDatabase {
-                child_database,
-                children,
-            } => child_database.to_ast(arena, children),
             Block::Unsupported => arena.alloc(AstNode::new(RefCell::new(Ast::new(
                 NodeValue::Raw(UNSUPPORTED_NODE_TEXT.into()),
                 Default::default(),
             )))),
+            Block::ChildDatabase { child_database, .. } => child_database.to_ast(arena),
+            Block::Image { image, .. } => image.to_ast(arena),
+            Block::Divider { divider, .. } => divider.to_ast(arena),
+            Block::ChildPage { child_page, .. } => child_page.to_ast(arena),
+            Block::Equation { equation, .. } => equation.to_ast(arena),
+            Block::Pdf { pdf, .. } => pdf.to_ast(arena),
+            Block::Code { code, .. } => code.to_ast(arena),
+            Block::Bookmark { bookmark, .. } => bookmark.to_ast(arena),
+            Block::File { file, .. } => file.to_ast(arena),
             Block::Unexpected | Block::TableRow { .. } => {
                 arena.alloc(AstNode::new(RefCell::new(Ast::new(
                     NodeValue::Raw(UNEXPECTED_NODE_TEXT.into()),
@@ -266,28 +231,18 @@ impl Block {
             | Block::Heading1 { children, .. }
             | Block::Heading2 { children, .. }
             | Block::Heading3 { children, .. }
-            | Block::ChildPage { children, .. }
-            | Block::Equation { children, .. }
             | Block::Callout { children, .. }
-            | Block::Pdf { children, .. }
-            | Block::Image { children, .. }
-            | Block::File { children, .. }
-            | Block::ChildDatabase { children, .. }
             | Block::Quote { children, .. }
-            | Block::Divider { children, .. }
             | Block::BulletedListItem { children, .. }
             | Block::NumberedListItem { children, .. }
-            | Block::Code { children, .. }
-            | Block::ToDo { children, .. }
             | Block::Table { children, .. }
-            | Block::TableRow { children, .. }
-            | Block::Bookmark { children, .. } => children.push(child),
-            Block::Unsupported | Block::Unexpected => {}
+            | Block::ToDo { children, .. } => children.push(child),
+            _ => {}
         }
     }
 }
 
-pub trait BlockAst {
+pub trait BlockAstWithChildren {
     fn create_node<'a>(arena: &'a Arena<AstNode<'a>>, node_value: NodeValue) -> &'a AstNode<'a> {
         arena.alloc(AstNode::new(RefCell::new(Ast::new(
             node_value,
@@ -296,6 +251,17 @@ pub trait BlockAst {
     }
 
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, children: &Vec<Block>) -> &'a AstNode<'a>;
+}
+
+pub trait BlockAstWithoutChildren {
+    fn create_node<'a>(arena: &'a Arena<AstNode<'a>>, node_value: NodeValue) -> &'a AstNode<'a> {
+        arena.alloc(AstNode::new(RefCell::new(Ast::new(
+            node_value,
+            Default::default(),
+        ))))
+    }
+
+    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a>;
 }
 
 #[derive(Deserialize, Clone, Debug)]

@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichTextVec;
 
-use super::{Block, BlockAst, BlockContent};
+use super::{Block, BlockAstWithChildren, BlockContent};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -14,7 +14,7 @@ pub struct Quote {
     quote: BlockContent,
 }
 
-impl BlockAst for Quote {
+impl BlockAstWithChildren for Quote {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(arena, NodeValue::BlockQuote);
         let paragraph = Self::create_node(arena, NodeValue::Paragraph);

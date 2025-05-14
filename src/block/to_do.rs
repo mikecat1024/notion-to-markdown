@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichText;
 
-use super::{Block, BlockAst};
+use super::{Block, BlockAstWithChildren};
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct ToDo {
@@ -20,7 +20,7 @@ pub struct ToDoContent {
     checked: bool,
 }
 
-impl BlockAst for ToDo {
+impl BlockAstWithChildren for ToDo {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, children: &Vec<Block>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(
             arena,

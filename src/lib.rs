@@ -4,8 +4,8 @@ use page::Page;
 
 mod block;
 mod page;
-mod utils;
 mod rich_text;
+mod utils;
 
 pub fn main() {
     let headline1: Block =

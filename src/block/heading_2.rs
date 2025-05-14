@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichTextVec;
 
-use super::{Block, BlockAst, BlockContent};
+use super::{Block, BlockAstWithChildren, BlockContent};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -14,7 +14,7 @@ pub struct Heading2 {
     heading_2: BlockContent,
 }
 
-impl BlockAst for Heading2 {
+impl BlockAstWithChildren for Heading2 {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(
             arena,

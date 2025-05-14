@@ -4,7 +4,7 @@ use comrak::{
 };
 use serde::Deserialize;
 
-use super::{Block, BlockAst};
+use super::BlockAstWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -17,8 +17,8 @@ struct BookmarkContent {
     url: String,
 }
 
-impl BlockAst for Bookmark {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
+impl BlockAstWithoutChildren for Bookmark {
+    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(
             arena,
             NodeValue::Link(NodeLink {

@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichText;
 
-use super::{Block, BlockAst};
+use super::{Block, BlockAstWithChildren};
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Table {
@@ -30,7 +30,7 @@ struct TableRowContent {
     pub cells: Vec<Vec<RichText>>,
 }
 
-impl BlockAst for Table {
+impl BlockAstWithChildren for Table {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, children: &Vec<Block>) -> &'a AstNode<'a> {
         let rows: Vec<&TableRow> = children
             .iter()

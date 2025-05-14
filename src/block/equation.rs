@@ -4,7 +4,7 @@ use comrak::{
 };
 use serde::Deserialize;
 
-use super::{Block, BlockAst};
+use super::BlockAstWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Equation {
@@ -17,8 +17,8 @@ pub struct EquationContent {
     expression: String,
 }
 
-impl BlockAst for Equation {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
+impl BlockAstWithoutChildren for Equation {
+    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
         Self::create_node(
             arena,
             NodeValue::Math(NodeMath {

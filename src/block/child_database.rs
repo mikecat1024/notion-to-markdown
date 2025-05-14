@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::utils::escape_page_title;
 
-use super::{Block, BlockAst};
+use super::BlockAstWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -19,8 +19,8 @@ struct ChildPageContent {
     title: String,
 }
 
-impl BlockAst for ChildDatabase {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
+impl BlockAstWithoutChildren for ChildDatabase {
+    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
         let title = escape_page_title(&self.child_database.title);
 
         let wrapper = Self::create_node(

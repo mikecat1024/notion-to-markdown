@@ -6,7 +6,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichText;
 
-use super::{Block, BlockAst};
+use super::{Block, BlockAstWithChildren};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -26,7 +26,7 @@ struct IconContent {
     emoji: String,
 }
 
-impl BlockAst for Callout {
+impl BlockAstWithChildren for Callout {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
         let wrapper = Self::create_node(arena, NodeValue::BlockQuote);
         let paragraph = Self::create_node(arena, NodeValue::Paragraph);
