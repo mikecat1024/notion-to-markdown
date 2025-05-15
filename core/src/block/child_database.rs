@@ -4,34 +4,34 @@ use comrak::{
 };
 use serde::Deserialize;
 
-use crate::utils::escape_page_title;
+use crate::escape_page_title;
 
 use super::BlockAstWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct ChildPage {
-    child_page: ChildPageContent,
+pub struct ChildDatabase {
+    child_database: ChildDatabaseContent,
 }
 #[derive(Deserialize, Clone, Debug)]
 
-struct ChildPageContent {
+struct ChildDatabaseContent {
     title: String,
 }
 
-impl BlockAstWithoutChildren for ChildPage {
+impl BlockAstWithoutChildren for ChildDatabase {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
-        let title = escape_page_title(&self.child_page.title);
+        let title = escape_page_title(&self.child_database.title);
 
         let wrapper = Self::create_node(
             arena,
             NodeValue::Link(NodeLink {
-                url: format!("{}.md", title),
+                url: format!("{}/{}.md", title, title),
                 title: String::new(), // The title always empty string
             }),
         );
 
-        let name = Self::create_node(arena, NodeValue::Text(self.child_page.title.clone()));
+        let name = Self::create_node(arena, NodeValue::Text(self.child_database.title.clone()));
 
         wrapper.append(name);
 
@@ -51,7 +51,8 @@ mod test {
     #[test]
     fn test_to_markdown() {
         let item: Block =
-            serde_json::from_str(include_str!("../tests/block/child_page_response.json")).unwrap();
+            serde_json::from_str(include_str!("../tests/block/child_database_response.json"))
+                .unwrap();
 
         let arena = Arena::new();
         let ast = item.to_ast(&arena);
@@ -68,7 +69,7 @@ mod test {
         assert_eq!(
             String::from_utf8(output).unwrap(),
             indoc! {r#"
-                [this is child page](this_is_child_page.md)
+                [this is child database](this_is_child_database/this_is_child_database.md)
             "#}
         )
     }

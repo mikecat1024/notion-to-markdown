@@ -246,7 +246,7 @@ impl Block {
         }
     }
 
-    pub(crate) fn append(&mut self, child: Block) {
+    pub fn append(&mut self, child: Block) {
         match self {
             Block::Paragraph { children, .. }
             | Block::Heading1 { children, .. }
