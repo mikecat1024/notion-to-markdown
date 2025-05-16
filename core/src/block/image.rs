@@ -1,10 +1,6 @@
-use comrak::{
-    nodes::{AstNode, NodeLink, NodeValue},
-    Arena,
-};
 use serde::Deserialize;
 
-use super::BlockAstWithoutChildren;
+use super::MarkdownBlockWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -22,22 +18,15 @@ struct FileUrl {
     url: String,
 }
 
-impl BlockAstWithoutChildren for Image {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
-        Self::create_node(
-            arena,
-            NodeValue::Image(NodeLink {
-                url: self.image.file.url.clone(),
-                title: String::new(), // The title always empty string
-            }),
-        )
+impl MarkdownBlockWithoutChildren for Image {
+    fn to_markdown(&self) -> String {
+        format!("![{}]({})", self.image.file.url, self.image.file.url)
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use comrak::{format_commonmark, Arena, Options};
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
@@ -48,22 +37,10 @@ mod test {
         let item: Block =
             serde_json::from_str(include_str!("../tests/block/image_response.json")).unwrap();
 
-        let arena = Arena::new();
-        let ast = item.to_ast(&arena);
-
-        let mut options = Options::default();
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
-
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            item.to_markdown() + "\n",
             indoc! {r#"
-                ![](https://picsum.photos/200/300)
+                ![https://picsum.photos/200/300](https://picsum.photos/200/300)
             "#}
         )
     }

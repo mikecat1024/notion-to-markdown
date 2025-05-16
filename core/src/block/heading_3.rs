@@ -1,9 +1,5 @@
-use super::{Block, BlockAstWithChildren, BlockContent};
+use super::{BlockContent, MarkdownBlockWithoutChildren};
 use crate::rich_text::RichTextVec;
-use comrak::{
-    nodes::{AstNode, NodeHeading, NodeValue},
-    Arena,
-};
 use serde::Deserialize;
 
 #[derive(Deserialize, Clone, Debug)]
@@ -12,30 +8,15 @@ pub struct Heading3 {
     heading_3: BlockContent,
 }
 
-impl BlockAstWithChildren for Heading3 {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, _: &Vec<Block>) -> &'a AstNode<'a> {
-        let wrapper = Self::create_node(
-            arena,
-            NodeValue::Heading(NodeHeading {
-                level: 3,
-                setext: true,
-            }),
-        );
-
-        self.heading_3
-            .rich_text
-            .to_ast(arena)
-            .iter()
-            .for_each(|ast| wrapper.append(ast));
-
-        wrapper
+impl MarkdownBlockWithoutChildren for Heading3 {
+    fn to_markdown(&self) -> String {
+        format!("### {}", self.heading_3.rich_text.to_markdown())
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use comrak::{format_commonmark, Arena, Options};
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
@@ -43,23 +24,11 @@ mod test {
 
     #[test]
     fn test_to_markdown() {
-        let paragraph: Block =
+        let item: Block =
             serde_json::from_str(include_str!("../tests/block/headline3_response.json")).unwrap();
 
-        let arena = Arena::new();
-        let ast = paragraph.to_ast(&arena);
-
-        let mut options = Options::default();
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
-
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            item.to_markdown() + "\n",
             indoc! {r#"
                 ### this is headline3
             "#}

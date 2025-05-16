@@ -1,22 +1,14 @@
-use comrak::{
-    nodes::{AstNode, NodeTable, NodeValue, TableAlignment},
-    Arena,
-};
 use serde::Deserialize;
 
-use crate::rich_text::RichText;
+use crate::{
+    block::INDENT,
+    rich_text::{RichText, RichTextVec},
+};
 
-use super::{Block, BlockAstWithChildren};
-
-#[derive(Deserialize, Clone, Debug)]
-pub struct Table {
-    table: TableContent,
-}
+use super::{Block, BlockMeta, MarkdownBlockWithChildren};
 
 #[derive(Deserialize, Clone, Debug)]
-pub struct TableContent {
-    table_width: usize,
-}
+pub struct Table {}
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -30,47 +22,75 @@ struct TableRowContent {
     pub cells: Vec<Vec<RichText>>,
 }
 
-impl BlockAstWithChildren for Table {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, children: &Vec<Block>) -> &'a AstNode<'a> {
-        let rows: Vec<&TableRow> = children
+impl MarkdownBlockWithChildren for Table {
+    fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String {
+        let table: Vec<Vec<String>> = children
             .iter()
             .filter_map(|child| match child {
-                Block::TableRow { table_row, .. } => Some(table_row),
+                Block::TableRow { table_row, .. } => Some(
+                    table_row
+                        .table_row
+                        .cells
+                        .iter()
+                        .map(|x| x.to_markdown())
+                        .collect::<Vec<String>>(),
+                ),
                 _ => None,
             })
             .collect();
 
-        let table = Self::create_node(
-            arena,
-            NodeValue::Table(NodeTable {
-                alignments: vec![TableAlignment::Center; self.table.table_width as usize],
-                num_columns: self.table.table_width,
-                num_rows: rows.len(),
-                num_nonempty_cells: 0,
-            }),
-        );
+        if table.is_empty() {
+            return String::new();
+        }
 
-        rows.iter().enumerate().for_each(|(i, row)| {
-            let row_ast = Self::create_node(arena, NodeValue::TableRow(i == 0));
-            row.table_row.cells.iter().for_each(|cell| {
-                let cell_ast = Self::create_node(arena, NodeValue::TableCell);
-                cell.iter().for_each(|rich_text| {
-                    let asts = rich_text.to_ast(arena);
-                    asts.iter().for_each(|ast| cell_ast.append(ast));
-                });
-                row_ast.append(cell_ast);
-            });
-            table.append(row_ast);
-        });
+        let columns_count = table[0].len();
+        let mut columns_widths = vec![0; columns_count];
+        for row in &table {
+            for (i, cell) in row.iter().enumerate().take(columns_count) {
+                let w: usize = cell.chars().map(|c| if c.is_ascii() { 1 } else { 2 }).sum();
+                columns_widths[i] = columns_widths[i].max(w);
+            }
+        }
 
-        table
+        let pad_cell = |cell: &str, target: usize| {
+            let cw: usize = cell.chars().map(|c| if c.is_ascii() { 1 } else { 2 }).sum();
+            let padding = target.saturating_sub(cw);
+            format!("{}{}", cell, " ".repeat(padding))
+        };
+
+        let format_row = |row: &[String]| {
+            let cells: Vec<String> = row
+                .iter()
+                .enumerate()
+                .map(|(i, cell)| pad_cell(cell, columns_widths[i]))
+                .collect();
+            format!("| {} |", cells.join(" | "))
+        };
+
+        let mut markdown = String::new();
+        markdown.push_str(&format_row(&table[0]));
+        markdown.push('\n');
+
+        let separators: Vec<String> = columns_widths
+            .iter()
+            .map(|&w| "-".repeat(w.max(3)))
+            .collect();
+        markdown.push_str(&format!("| {} |\n", separators.join(" | ")));
+
+        for row in &table[1..] {
+            let mut cells = row.clone();
+            cells.resize(columns_count, String::new());
+            markdown.push_str(&format_row(&cells));
+            markdown.push('\n');
+        }
+
+        format!("{}{}", INDENT.repeat(meta.depth), markdown)
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use comrak::{format_commonmark, Arena, Options};
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
@@ -88,23 +108,11 @@ mod test {
         table.append(row1);
         table.append(row2);
 
-        let arena = Arena::new();
-        let ast = table.to_ast(&arena);
-
-        let mut options = Options::default();
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
-
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            table.to_markdown(),
             indoc! {r#"
                 | this  | is  | table row |
-                | :-: | :-: | :-: |
+                | ----- | --- | --------- |
                 | this  | is  | table row |
             "#}
         )

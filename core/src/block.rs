@@ -1,5 +1,4 @@
 use core::panic;
-use std::cell::RefCell;
 
 use bookmark::Bookmark;
 use bulleted_list_item::BulletedListItem;
@@ -7,8 +6,6 @@ use callout::Callout;
 use child_database::ChildDatabase;
 use child_page::ChildPage;
 use code::Code;
-use comrak::nodes::{Ast, AstNode, NodeValue};
-use comrak::Arena;
 use divider::Divider;
 use embed::Embed;
 use equation::Equation;
@@ -63,18 +60,23 @@ pub enum Block {
     NumberedListItem {
         #[serde(flatten)]
         numbered_list_item: NumberedListItem,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
+        meta: BlockMeta,
+    },
+    BulletedListItem {
+        #[serde(flatten)]
+        bulleted_list_item: BulletedListItem,
+        #[serde(skip_serializing, default)]
+        children: Vec<Block>,
+        #[serde(skip_serializing, default)]
         meta: BlockMeta,
     },
     Paragraph {
         #[serde(flatten)]
         paragraph: Paragraph,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
     },
     Pdf {
@@ -84,8 +86,7 @@ pub enum Block {
     Quote {
         #[serde(flatten)]
         quote: Quote,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
     },
     Code {
@@ -96,36 +97,24 @@ pub enum Block {
     Heading1 {
         #[serde(flatten)]
         heading_1: Heading1,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
     },
     #[serde(rename = "heading_2")]
     Heading2 {
         #[serde(flatten)]
         heading_2: Heading2,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
     },
     #[serde(rename = "heading_3")]
     Heading3 {
         #[serde(flatten)]
         heading_3: Heading3,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
     },
-    BulletedListItem {
-        #[serde(flatten)]
-        bulleted_list_item: BulletedListItem,
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        children: Vec<Block>,
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        meta: BlockMeta,
-    },
+
     Image {
         #[serde(flatten)]
         image: Image,
@@ -142,9 +131,10 @@ pub enum Block {
     ToDo {
         #[serde(flatten)]
         to_do: ToDo,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
+        #[serde(skip_serializing, default)]
+        meta: BlockMeta,
     },
     Bookmark {
         #[serde(flatten)]
@@ -153,8 +143,7 @@ pub enum Block {
     Callout {
         #[serde(flatten)]
         callout: Callout,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
     },
     ChildPage {
@@ -168,9 +157,10 @@ pub enum Block {
     Table {
         #[serde(flatten)]
         table: Table,
-        #[serde(skip_serializing)]
-        #[serde(default)]
+        #[serde(skip_serializing, default)]
         children: Vec<Block>,
+        #[serde(skip_serializing, default)]
+        meta: BlockMeta,
     },
     TableRow {
         #[serde(flatten)]
@@ -232,77 +222,23 @@ impl Block {
                 children,
                 meta: meta,
             },
-            _ => todo!("not implemented"),
-        }
-    }
-
-    pub(crate) fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
-        match self {
+            Block::ToDo {
+                to_do,
+                children,
+                meta,
+            } => Block::ToDo {
+                to_do,
+                children,
+                meta,
+            },
             Block::Paragraph {
                 paragraph,
                 children,
-                ..
-            } => paragraph.to_ast(arena, children),
-            Block::Quote {
-                quote, children, ..
-            } => quote.to_ast(arena, children),
-            Block::Table {
-                table, children, ..
-            } => table.to_ast(arena, children),
-
-            Block::Callout {
-                callout, children, ..
-            } => callout.to_ast(arena, children),
-            Block::Heading1 {
-                heading_1,
+            } => Block::Paragraph {
+                paragraph,
                 children,
-                ..
-            } => heading_1.to_ast(arena, children),
-            Block::Heading2 {
-                heading_2,
-                children,
-                ..
-            } => heading_2.to_ast(arena, children),
-            Block::Heading3 {
-                heading_3,
-                children,
-                ..
-            } => heading_3.to_ast(arena, children),
-            Block::BulletedListItem {
-                bulleted_list_item,
-                children,
-                ..
-            } => bulleted_list_item.to_ast(arena, children),
-            Block::NumberedListItem {
-                numbered_list_item,
-                children,
-                ..
-            } => numbered_list_item.to_ast(arena, children),
-            Block::ToDo {
-                to_do, children, ..
-            } => to_do.to_ast(arena, children),
-            Block::Unsupported => arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                NodeValue::Raw(UNSUPPORTED_NODE_TEXT.into()),
-                Default::default(),
-            )))),
-            Block::ChildDatabase { child_database, .. } => child_database.to_ast(arena),
-            Block::Image { image, .. } => image.to_ast(arena),
-            Block::LinkPreview { link_preview, .. } => link_preview.to_ast(arena),
-            Block::Divider { divider, .. } => divider.to_ast(arena),
-            Block::ChildPage { child_page, .. } => child_page.to_ast(arena),
-            Block::Equation { equation, .. } => equation.to_ast(arena),
-            Block::Pdf { pdf, .. } => pdf.to_ast(arena),
-            // Block::LinkToPage { link_to_page } => link_to_page.to_ast(arena),
-            Block::Code { code, .. } => code.to_ast(arena),
-            Block::Bookmark { bookmark, .. } => bookmark.to_ast(arena),
-            Block::Embed { embed, .. } => embed.to_ast(arena),
-            Block::File { file, .. } => file.to_ast(arena),
-            Block::Unexpected | Block::TableRow { .. } => {
-                arena.alloc(AstNode::new(RefCell::new(Ast::new(
-                    NodeValue::Raw(UNEXPECTED_NODE_TEXT.into()),
-                    Default::default(),
-                ))))
-            }
+            },
+            _ => todo!("not implemented"),
         }
     }
 
@@ -322,7 +258,7 @@ impl Block {
         }
     }
 
-    fn to_markdown(&self) -> String {
+    pub fn to_markdown(&self) -> String {
         match &self {
             Block::NumberedListItem {
                 numbered_list_item,
@@ -334,31 +270,46 @@ impl Block {
                 children,
                 meta,
             } => bulleted_list_item.to_markdown(children, meta),
-            _ => "".into(),
+            Block::ToDo {
+                to_do,
+                children,
+                meta,
+            } => to_do.to_markdown(children, meta),
+            Block::Table {
+                table,
+                children,
+                meta,
+            } => table.to_markdown(children, meta),
+            Block::Paragraph { paragraph, .. } => paragraph.to_markdown(),
+            Block::Pdf { pdf, .. } => pdf.to_markdown(),
+            Block::Quote { quote, .. } => quote.to_markdown(),
+            Block::Code { code } => code.to_markdown(),
+            Block::Heading1 { heading_1, .. } => heading_1.to_markdown(),
+            Block::Heading2 { heading_2, .. } => heading_2.to_markdown(),
+            Block::Heading3 { heading_3, .. } => heading_3.to_markdown(),
+            Block::Image { image } => image.to_markdown(),
+            Block::Divider { divider } => divider.to_markdown(),
+            Block::File { file } => file.to_markdown(),
+            Block::Bookmark { bookmark } => bookmark.to_markdown(),
+            Block::Equation { equation } => equation.to_markdown(),
+            Block::Callout { callout, .. } => callout.to_markdown(),
+            Block::ChildPage { child_page, .. } => child_page.to_markdown(),
+            Block::Embed { embed } => embed.to_markdown(),
+            Block::LinkPreview { link_preview } => link_preview.to_markdown(),
+            Block::ChildDatabase { child_database } => child_database.to_markdown(),
+            Block::Unsupported => UNSUPPORTED_NODE_TEXT.into(),
+            Block::Unexpected => UNEXPECTED_NODE_TEXT.into(),
+            Block::TableRow { .. } => panic!("The method to_markdown for Block::TableRow is not allowed. Please append rows to table as children.")
         }
     }
 }
 
-pub trait BlockAstWithChildren {
-    fn create_node<'a>(arena: &'a Arena<AstNode<'a>>, node_value: NodeValue) -> &'a AstNode<'a> {
-        arena.alloc(AstNode::new(RefCell::new(Ast::new(
-            node_value,
-            Default::default(),
-        ))))
-    }
-
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>, children: &Vec<Block>) -> &'a AstNode<'a>;
+pub(crate) trait MarkdownBlockWithChildren {
+    fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String;
 }
 
-pub trait BlockAstWithoutChildren {
-    fn create_node<'a>(arena: &'a Arena<AstNode<'a>>, node_value: NodeValue) -> &'a AstNode<'a> {
-        arena.alloc(AstNode::new(RefCell::new(Ast::new(
-            node_value,
-            Default::default(),
-        ))))
-    }
-
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a>;
+pub(crate) trait MarkdownBlockWithoutChildren {
+    fn to_markdown(&self) -> String;
 }
 
 #[derive(Deserialize, Clone, Debug)]

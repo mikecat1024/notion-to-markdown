@@ -1,10 +1,6 @@
-use comrak::{
-    nodes::{AstNode, NodeLink, NodeValue},
-    Arena,
-};
 use serde::Deserialize;
 
-use super::BlockAstWithoutChildren;
+use super::MarkdownBlockWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -22,28 +18,18 @@ struct FileUrl {
     url: String,
 }
 
-impl BlockAstWithoutChildren for Pdf {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
-        let wrapper = Self::create_node(
-            arena,
-            NodeValue::Link(NodeLink {
-                url: self.pdf.file.url.to_string(),
-                title: String::new(), // The title always empty string
-            }),
-        );
-
-        let name = Self::create_node(arena, NodeValue::Text("PDF Document".into()));
-
-        wrapper.append(name);
-
-        wrapper
+impl MarkdownBlockWithoutChildren for Pdf {
+    fn to_markdown(&self) -> String {
+        format!(
+            "[PDF Document: {}]({})",
+            self.pdf.file.url, self.pdf.file.url
+        )
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use comrak::{format_commonmark, Arena, Options};
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
@@ -54,22 +40,10 @@ mod test {
         let item: Block =
             serde_json::from_str(include_str!("../tests/block/pdf_response.json")).unwrap();
 
-        let arena = Arena::new();
-        let ast = item.to_ast(&arena);
-
-        let mut options = Options::default();
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
-
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            item.to_markdown() + "\n",
             indoc! {r#"
-                [PDF Document](https://pdfobject.com/pdf/sample.pdf)
+                [PDF Document: https://pdfobject.com/pdf/sample.pdf](https://pdfobject.com/pdf/sample.pdf)
             "#}
         )
     }

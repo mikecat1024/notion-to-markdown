@@ -1,7 +1,6 @@
-pub use page::Page;
+pub use block::*;
 
 mod block;
-mod page;
 mod rich_text;
 
 pub trait NotionClient {

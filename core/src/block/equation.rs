@@ -1,10 +1,6 @@
-use comrak::{
-    nodes::{AstNode, NodeMath, NodeValue},
-    Arena,
-};
 use serde::Deserialize;
 
-use super::BlockAstWithoutChildren;
+use super::MarkdownBlockWithoutChildren;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Equation {
@@ -17,23 +13,15 @@ pub struct EquationContent {
     expression: String,
 }
 
-impl BlockAstWithoutChildren for Equation {
-    fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
-        Self::create_node(
-            arena,
-            NodeValue::Math(NodeMath {
-                dollar_math: true,
-                display_math: true,
-                literal: self.equation.expression.clone(),
-            }),
-        )
+impl MarkdownBlockWithoutChildren for Equation {
+    fn to_markdown(&self) -> String {
+        format!("$$\n{}\n$$", self.equation.expression)
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use comrak::{format_commonmark, Arena, Options};
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
@@ -41,25 +29,15 @@ mod test {
 
     #[test]
     fn test_to_markdown() {
-        let paragraph: Block =
+        let item: Block =
             serde_json::from_str(include_str!("../tests/block/equation_response.json")).unwrap();
 
-        let arena = Arena::new();
-        let ast = paragraph.to_ast(&arena);
-
-        let mut options = Options::default();
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
-
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            item.to_markdown() + "\n",
             indoc! {r#"
-                $$x + y = 1 \\ x^2 + y^1 = 1$$
+                $$
+                x + y = 1 \\ x^2 + y^1 = 1
+                $$
             "#}
         )
     }
