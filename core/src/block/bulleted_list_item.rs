@@ -4,14 +4,27 @@ use comrak::{
 };
 use serde::Deserialize;
 
-use crate::rich_text::RichTextVec;
+use crate::{block::BlockChildren, rich_text::RichTextVec};
 
-use super::{Block, BlockAstWithChildren, BlockContent};
+use super::{Block, BlockAstWithChildren, BlockContent, BlockMeta};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct BulletedListItem {
     bulleted_list_item: BlockContent,
+}
+
+impl BulletedListItem {
+    pub(crate) fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String {
+        let inline = self.bulleted_list_item.rich_text.to_markdown();
+
+        if children.is_empty() {
+            format!("- {}", inline)
+        } else {
+            let children_markdown = children.to_markdown(meta.depth + 1);
+            format!("- {}\n{}", inline, children_markdown)
+        }
+    }
 }
 
 impl BlockAstWithChildren for BulletedListItem {
@@ -109,34 +122,31 @@ mod test {
 
     #[test]
     fn test_to_markdown() {
-        let item: Block = serde_json::from_str(include_str!(
-            "../tests/block/numbered_list_item_response.json"
+        let mut item: Block = serde_json::from_str(include_str!(
+            "../tests/block/bulleted_list_item_response.json"
         ))
         .unwrap();
+        let mut item1 = item.clone();
+        let item11 = item.clone();
+        let item2 = item.clone();
 
-        let arena = Arena::new();
-        let ast = item.to_ast(&arena);
-
-        let mut options = Options::default();
-
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
+        item1.append(item11);
+        item.append(item1);
+        item.append(item2);
 
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            item.to_markdown() + "\n",
             indoc! {r#"
-                1. this is numbered list item
-            "#}
+              - this is bulleted list item
+                - this is bulleted list item
+                  - this is bulleted list item
+                - this is bulleted list item
+            "#},
         )
     }
 
     #[test]
-    fn test_to_markdown_with_nest() {
+    fn test_to_ast_with_nest() {
         let mut parent_item: Block = serde_json::from_str(include_str!(
             "../tests/block/bulleted_list_item_response.json"
         ))

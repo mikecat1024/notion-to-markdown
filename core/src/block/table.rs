@@ -56,8 +56,6 @@ impl BlockAstWithChildren for Table {
                 let cell_ast = Self::create_node(arena, NodeValue::TableCell);
                 cell.iter().for_each(|rich_text| {
                     let asts = rich_text.to_ast(arena);
-                    println!("{:#?}", asts);
-
                     asts.iter().for_each(|ast| cell_ast.append(ast));
                 });
                 row_ast.append(cell_ast);

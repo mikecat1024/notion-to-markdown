@@ -1,3 +1,4 @@
+use core::panic;
 use std::cell::RefCell;
 
 use bookmark::Bookmark;
@@ -17,7 +18,6 @@ use heading_2::Heading2;
 use heading_3::Heading3;
 use image::Image;
 use link_preview::LinkPreview;
-// use link_to_page::LinkToPage;
 use numbered_list_item::NumberedListItem;
 use paragraph::Paragraph;
 use pdf::Pdf;
@@ -53,12 +53,23 @@ use crate::rich_text::RichText;
 
 const UNSUPPORTED_NODE_TEXT: &str = "<!-- unsupported block -->";
 const UNEXPECTED_NODE_TEXT: &str = "<!-- unexpected block -->";
+const INDENT: &str = "  ";
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(tag = "type")]
 #[serde(rename_all = "snake_case")]
 
 pub enum Block {
+    NumberedListItem {
+        #[serde(flatten)]
+        numbered_list_item: NumberedListItem,
+        #[serde(skip_serializing)]
+        #[serde(default)]
+        children: Vec<Block>,
+        #[serde(skip_serializing)]
+        #[serde(default)]
+        meta: BlockMeta,
+    },
     Paragraph {
         #[serde(flatten)]
         paragraph: Paragraph,
@@ -111,18 +122,15 @@ pub enum Block {
         #[serde(skip_serializing)]
         #[serde(default)]
         children: Vec<Block>,
+        #[serde(skip_serializing)]
+        #[serde(default)]
+        meta: BlockMeta,
     },
     Image {
         #[serde(flatten)]
         image: Image,
     },
-    NumberedListItem {
-        #[serde(flatten)]
-        numbered_list_item: NumberedListItem,
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        children: Vec<Block>,
-    },
+
     Divider {
         #[serde(flatten)]
         divider: Divider,
@@ -189,38 +197,90 @@ pub enum Block {
     Unexpected,
 }
 
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "snake_case")]
+#[serde(default)]
+pub struct BlockMeta {
+    order: usize,
+    depth: usize,
+}
+
+impl Default for BlockMeta {
+    fn default() -> BlockMeta {
+        BlockMeta { order: 1, depth: 0 }
+    }
+}
+
 impl Block {
+    fn with_meta(self, meta: BlockMeta) -> Block {
+        match self {
+            Block::NumberedListItem {
+                numbered_list_item,
+                children,
+                ..
+            } => Block::NumberedListItem {
+                numbered_list_item,
+                children,
+                meta: meta,
+            },
+            Block::BulletedListItem {
+                bulleted_list_item,
+                children,
+                ..
+            } => Block::BulletedListItem {
+                bulleted_list_item,
+                children,
+                meta: meta,
+            },
+            _ => todo!("not implemented"),
+        }
+    }
+
     pub(crate) fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> &'a AstNode<'a> {
         match self {
             Block::Paragraph {
                 paragraph,
                 children,
+                ..
             } => paragraph.to_ast(arena, children),
-            Block::Quote { quote, children } => quote.to_ast(arena, children),
-            Block::Table { table, children } => table.to_ast(arena, children),
+            Block::Quote {
+                quote, children, ..
+            } => quote.to_ast(arena, children),
+            Block::Table {
+                table, children, ..
+            } => table.to_ast(arena, children),
 
-            Block::Callout { callout, children } => callout.to_ast(arena, children),
+            Block::Callout {
+                callout, children, ..
+            } => callout.to_ast(arena, children),
             Block::Heading1 {
                 heading_1,
                 children,
+                ..
             } => heading_1.to_ast(arena, children),
             Block::Heading2 {
                 heading_2,
                 children,
+                ..
             } => heading_2.to_ast(arena, children),
             Block::Heading3 {
                 heading_3,
                 children,
+                ..
             } => heading_3.to_ast(arena, children),
             Block::BulletedListItem {
                 bulleted_list_item,
                 children,
+                ..
             } => bulleted_list_item.to_ast(arena, children),
             Block::NumberedListItem {
                 numbered_list_item,
                 children,
+                ..
             } => numbered_list_item.to_ast(arena, children),
-            Block::ToDo { to_do, children } => to_do.to_ast(arena, children),
+            Block::ToDo {
+                to_do, children, ..
+            } => to_do.to_ast(arena, children),
             Block::Unsupported => arena.alloc(AstNode::new(RefCell::new(Ast::new(
                 NodeValue::Raw(UNSUPPORTED_NODE_TEXT.into()),
                 Default::default(),
@@ -261,6 +321,22 @@ impl Block {
             _ => {}
         }
     }
+
+    fn to_markdown(&self) -> String {
+        match &self {
+            Block::NumberedListItem {
+                numbered_list_item,
+                children,
+                meta,
+            } => numbered_list_item.to_markdown(children, meta),
+            Block::BulletedListItem {
+                bulleted_list_item,
+                children,
+                meta,
+            } => bulleted_list_item.to_markdown(children, meta),
+            _ => "".into(),
+        }
+    }
 }
 
 pub trait BlockAstWithChildren {
@@ -289,4 +365,30 @@ pub trait BlockAstWithoutChildren {
 #[serde(rename_all = "snake_case")]
 pub struct BlockContent {
     pub rich_text: Vec<RichText>,
+}
+
+trait BlockChildren {
+    fn to_markdown(&self, depth: usize) -> String;
+}
+
+impl BlockChildren for Vec<Block> {
+    fn to_markdown(&self, depth: usize) -> String {
+        self.iter()
+            .enumerate()
+            .map(|(order, block)| {
+                format!(
+                    "{}{}",
+                    INDENT.repeat(depth),
+                    block
+                        .clone()
+                        .with_meta(BlockMeta {
+                            order: order + 1,
+                            depth
+                        })
+                        .to_markdown()
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
 }

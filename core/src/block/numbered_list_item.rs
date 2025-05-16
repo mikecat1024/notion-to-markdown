@@ -6,12 +6,25 @@ use serde::Deserialize;
 
 use crate::rich_text::RichTextVec;
 
-use super::{Block, BlockAstWithChildren, BlockContent};
+use super::{Block, BlockAstWithChildren, BlockChildren, BlockContent, BlockMeta};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct NumberedListItem {
     numbered_list_item: BlockContent,
+}
+
+impl NumberedListItem {
+    pub(crate) fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String {
+        let inline = self.numbered_list_item.rich_text.to_markdown();
+
+        if children.is_empty() {
+            format!("{}. {}", meta.order, inline)
+        } else {
+            let children_markdown = children.to_markdown(meta.depth + 1);
+            format!("{}. {}\n{}", meta.order, inline, children_markdown)
+        }
+    }
 }
 
 impl BlockAstWithChildren for NumberedListItem {
@@ -100,8 +113,6 @@ impl BlockAstWithChildren for NumberedListItem {
 
 #[cfg(test)]
 mod test {
-
-    use comrak::{format_commonmark, Arena, Options};
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
@@ -109,69 +120,25 @@ mod test {
 
     #[test]
     fn test_to_markdown() {
-        let item: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
+        let mut item: Block = serde_json::from_str(include_str!(
+            "../tests/block/numbered_list_item_response.json"
         ))
         .unwrap();
+        let mut item1 = item.clone();
+        let item11 = item.clone();
+        let item2 = item.clone();
 
-        let arena = Arena::new();
-        let ast = item.to_ast(&arena);
-
-        let mut options = Options::default();
-
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
+        item1.append(item11);
+        item.append(item1);
+        item.append(item2);
 
         assert_eq!(
-            String::from_utf8(output).unwrap(),
+            item.to_markdown() + "\n",
             indoc! {r#"
-                - this is bulleted list item
-            "#}
-        )
-    }
-
-    #[test]
-    fn test_to_markdown_with_nest() {
-        let mut parent_item: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
-        ))
-        .unwrap();
-        let child_item1: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
-        ))
-        .unwrap();
-        let child_item2: Block = serde_json::from_str(include_str!(
-            "../tests/block/bulleted_list_item_response.json"
-        ))
-        .unwrap();
-
-        parent_item.append(child_item1);
-        parent_item.append(child_item2);
-
-        let arena = Arena::new();
-        let ast = parent_item.to_ast(&arena);
-
-        let mut options = Options::default();
-
-        options.extension.strikethrough = true;
-        options.extension.table = true;
-        options.extension.tasklist = true;
-        options.extension.autolink = true;
-
-        let mut output = vec![];
-        format_commonmark(ast, &options, &mut output).unwrap();
-
-        assert_eq!(
-            String::from_utf8(output).unwrap(),
-            indoc! {r#"
-            - this is bulleted list item
-              - this is bulleted list item
-              - this is bulleted list item
+              1. this is numbered list item
+                1. this is numbered list item
+                  1. this is numbered list item
+                2. this is numbered list item
             "#}
         )
     }

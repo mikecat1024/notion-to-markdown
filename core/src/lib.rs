@@ -1,4 +1,3 @@
-pub use block::Block;
 pub use page::Page;
 
 mod block;

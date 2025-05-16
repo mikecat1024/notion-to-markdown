@@ -27,6 +27,7 @@ pub struct Annotations {
     italic: bool,
     strikethrough: bool,
     code: bool,
+    underline: bool,
 }
 
 impl Default for Annotations {
@@ -36,6 +37,7 @@ impl Default for Annotations {
             italic: false,
             strikethrough: false,
             code: false,
+            underline: false,
         }
     }
 }
@@ -201,13 +203,112 @@ impl RichText {
             } => Self::text_to_ast(arena, plain_text, href, annotations),
         }
     }
+
+    fn bold(text: &str) -> String {
+        format!("**{}**", text)
+    }
+
+    fn italic(text: &str) -> String {
+        format!("_{}_", text)
+    }
+
+    fn strikethrough(text: &str) -> String {
+        format!("~~{}~~", text)
+    }
+
+    fn code(text: &str) -> String {
+        format!("`{}`", text)
+    }
+
+    fn underline(text: &str) -> String {
+        format!("<u>{}</u>", text)
+    }
+
+    fn link(text: &str, url: &str) -> String {
+        format!("[{}]({})", text, url)
+    }
+
+    fn text_to_markdown(
+        plain_text: &String,
+        href: &Option<String>,
+        annotations: &Annotations,
+    ) -> String {
+        let leading_space = plain_text
+            .chars()
+            .take_while(|c| c.is_whitespace())
+            .collect::<String>();
+        let trimmed_plain_text = plain_text.trim().to_string();
+        let trailing_space =
+            if trimmed_plain_text.is_empty() && plain_text.chars().all(|c| c.is_whitespace()) {
+                String::new()
+            } else {
+                plain_text
+                    .chars()
+                    .rev()
+                    .take_while(|c| c.is_whitespace())
+                    .collect::<String>()
+                    .chars()
+                    .rev()
+                    .collect::<String>()
+            };
+
+        let mut markdown_text = if annotations.code {
+            Self::code(&plain_text)
+        } else {
+            trimmed_plain_text
+        };
+
+        if annotations.bold {
+            markdown_text = Self::bold(&markdown_text)
+        }
+
+        if annotations.italic {
+            markdown_text = Self::italic(&markdown_text)
+        }
+
+        if annotations.strikethrough {
+            markdown_text = Self::strikethrough(&markdown_text)
+        }
+
+        if annotations.underline {
+            markdown_text = Self::underline(&markdown_text)
+        }
+
+        if !annotations.code {
+            markdown_text = format!("{}{}{}", leading_space, markdown_text, trailing_space)
+        }
+
+        if let Some(url) = href {
+            markdown_text = Self::link(&markdown_text, url)
+        }
+
+        markdown_text
+    }
+
+    pub(crate) fn to_markdown(&self) -> String {
+        match self {
+            RichText::Text {
+                plain_text,
+                href,
+                annotations,
+            } => Self::text_to_markdown(plain_text, href, annotations),
+        }
+    }
 }
 
 pub trait RichTextVec {
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> Vec<&'a AstNode<'a>>;
+
+    fn to_markdown(&self) -> String;
 }
 
 impl RichTextVec for Vec<RichText> {
+    fn to_markdown(&self) -> String {
+        self.iter()
+            .map(|rich_text| rich_text.to_markdown())
+            .collect()
+    }
+
     fn to_ast<'a>(&self, arena: &'a Arena<AstNode<'a>>) -> Vec<&'a AstNode<'a>> {
         self.iter()
             .map(|rich_text| rich_text.to_ast(&arena))
