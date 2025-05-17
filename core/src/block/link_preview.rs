@@ -7,8 +7,8 @@ use super::MarkdownBlock;
 pub struct LinkPreview {
     link_preview: LinkPreviewContent,
 }
-#[derive(Deserialize, Clone, Debug)]
 
+#[derive(Deserialize, Clone, Debug)]
 struct LinkPreviewContent {
     url: String,
 }

@@ -15,6 +15,7 @@ use heading_2::Heading2;
 use heading_3::Heading3;
 use image::Image;
 use link_preview::LinkPreview;
+use link_to_page::LinkToPage;
 use numbered_list_item::NumberedListItem;
 use paragraph::Paragraph;
 use pdf::Pdf;
@@ -38,7 +39,7 @@ pub mod heading_2;
 pub mod heading_3;
 pub mod image;
 pub mod link_preview;
-// pub mod link_to_page;
+pub mod link_to_page;
 pub mod numbered_list_item;
 pub mod paragraph;
 pub mod pdf;
@@ -51,11 +52,10 @@ use crate::rich_text::RichText;
 const UNSUPPORTED_NODE_TEXT: &str = "<!-- unsupported block -->";
 const UNEXPECTED_NODE_TEXT: &str = "<!-- unexpected block -->";
 const INDENT: &str = "  ";
+const NOTION_ORIGIN: &str = "https://www.notion.so";
 
 #[derive(Deserialize, Clone, Debug)]
-#[serde(tag = "type")]
-#[serde(rename_all = "snake_case")]
-
+#[serde(rename_all = "snake_case", tag = "type")]
 pub enum Block {
     NumberedListItem(NumberedListItem),
     BulletedListItem(BulletedListItem),
@@ -81,6 +81,7 @@ pub enum Block {
     TableRow(TableRow),
     Embed(Embed),
     LinkPreview(LinkPreview),
+    LinkToPage(LinkToPage),
     ChildDatabase(ChildDatabase),
     Unsupported,
     #[serde(other)]
@@ -144,6 +145,7 @@ impl Block {
             Block::ChildPage(item) => item.to_markdown(),
             Block::Embed(item) => item.to_markdown(),
             Block::LinkPreview(item) => item.to_markdown(),
+            Block::LinkToPage(item) => item.to_markdown(),
             Block::ChildDatabase(item) => item.to_markdown(),
             Block::Unsupported => UNSUPPORTED_NODE_TEXT.into(),
             Block::Unexpected => UNEXPECTED_NODE_TEXT.into(),
