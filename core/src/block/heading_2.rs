@@ -2,12 +2,30 @@ use serde::Deserialize;
 
 use crate::rich_text::RichTextVec;
 
-use super::{BlockContent, MarkdownBlock};
+use super::{Block, BlockContent, BlockMeta, MarkdownBlock};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct Heading2 {
-    heading_2: BlockContent,
+    pub heading_2: BlockContent,
+    #[serde(skip_serializing, default)]
+    children: Vec<Block>,
+    #[serde(skip_serializing, default)]
+    meta: BlockMeta,
+}
+
+impl Heading2 {
+    pub(crate) fn append(&mut self, child: Block) {
+        self.children.push(child);
+    }
+
+    pub(crate) fn with_meta(self, meta: BlockMeta) -> Heading2 {
+        Heading2 {
+            meta,
+            children: self.children,
+            heading_2: self.heading_2,
+        }
+    }
 }
 
 impl MarkdownBlock for Heading2 {

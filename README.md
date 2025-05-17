@@ -20,12 +20,12 @@
 - [x] `embed`
 - [x] `link_preview`
 - [x] `link_to_page`
-- [ ] `breadcrumb`
-- [ ] `column`
-- [ ] `column_list`
-- [ ] `synced_block`
-- [ ] `toggle`
-- [ ] `template`
-- [ ] `table_of_contents`
+- [x] `breadcrumb`
+- [x] `column`
+- [x] `column_list`
+- [x] `synced_block`
+- [x] `toggle`
+- [x] `template`
+- [x] `table_of_contents`
 - [x] `unsupported`
-- [ ] `video`
+- [x] `video`
