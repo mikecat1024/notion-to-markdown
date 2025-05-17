@@ -5,13 +5,15 @@ use crate::{
     rich_text::{RichText, RichTextVec},
 };
 
-use super::{Block, BlockMeta, MarkdownBlockWithChildren};
+use super::{Block, BlockMeta, MarkdownBlock};
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct ToDo {
     to_do: ToDoContent,
     #[serde(skip_serializing, default)]
     children: Vec<Block>,
+    #[serde(skip_serializing, default)]
+    meta: BlockMeta,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -25,16 +27,24 @@ impl ToDo {
     pub(crate) fn append(&mut self, child: Block) {
         self.children.push(child);
     }
+
+    pub(crate) fn with_meta(self, meta: BlockMeta) -> ToDo {
+        ToDo {
+            meta,
+            children: self.children,
+            to_do: self.to_do,
+        }
+    }
 }
 
-impl MarkdownBlockWithChildren for ToDo {
-    fn to_markdown(&self, meta: &BlockMeta) -> String {
+impl MarkdownBlock for ToDo {
+    fn to_markdown(&self) -> String {
         let checked_x = if self.to_do.checked { "x" } else { " " };
 
         if self.children.is_empty() {
             format!("- [{}] {}", checked_x, self.to_do.rich_text.to_markdown())
         } else {
-            let children_markdown = self.children.to_markdown(meta.depth + 1);
+            let children_markdown = self.children.to_markdown(self.meta.depth + 1);
             format!(
                 "- [{}] {}\n{}",
                 checked_x,

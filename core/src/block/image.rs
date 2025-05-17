@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -18,7 +18,7 @@ struct FileUrl {
     url: String,
 }
 
-impl MarkdownBlockWithoutChildren for Image {
+impl MarkdownBlock for Image {
     fn to_markdown(&self) -> String {
         format!("![{}]({})", self.image.file.url, self.image.file.url)
     }

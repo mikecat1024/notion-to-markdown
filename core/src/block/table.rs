@@ -5,12 +5,14 @@ use crate::{
     rich_text::{RichText, RichTextVec},
 };
 
-use super::{Block, BlockMeta, MarkdownBlockWithChildren};
+use super::{Block, BlockMeta, MarkdownBlock};
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Table {
     #[serde(skip_serializing, default)]
     children: Vec<Block>,
+    #[serde(skip_serializing, default)]
+    meta: BlockMeta,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -29,15 +31,22 @@ impl Table {
     pub(crate) fn append(&mut self, child: Block) {
         self.children.push(child);
     }
+
+    pub(crate) fn with_meta(self, meta: BlockMeta) -> Table {
+        Table {
+            meta,
+            children: self.children,
+        }
+    }
 }
 
-impl MarkdownBlockWithChildren for Table {
-    fn to_markdown(&self, meta: &BlockMeta) -> String {
+impl MarkdownBlock for Table {
+    fn to_markdown(&self) -> String {
         let table: Vec<Vec<String>> = self
             .children
             .iter()
             .filter_map(|child| match child {
-                Block::TableRow { table_row, .. } => Some(
+                Block::TableRow(table_row) => Some(
                     table_row
                         .table_row
                         .cells
@@ -94,7 +103,7 @@ impl MarkdownBlockWithChildren for Table {
             markdown.push('\n');
         }
 
-        format!("{}{}", INDENT.repeat(meta.depth), markdown)
+        format!("{}{}", INDENT.repeat(self.meta.depth), markdown)
     }
 }
 

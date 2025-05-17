@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -13,7 +13,7 @@ struct LinkPreviewContent {
     url: String,
 }
 
-impl MarkdownBlockWithoutChildren for LinkPreview {
+impl MarkdownBlock for LinkPreview {
     fn to_markdown(&self) -> String {
         format!(
             "[Preview: {}]({})",

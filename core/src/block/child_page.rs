@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use crate::escape_page_title;
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -15,7 +15,7 @@ struct ChildPageContent {
     title: String,
 }
 
-impl MarkdownBlockWithoutChildren for ChildPage {
+impl MarkdownBlock for ChildPage {
     fn to_markdown(&self) -> String {
         let title = escape_page_title(&self.child_page.title);
 

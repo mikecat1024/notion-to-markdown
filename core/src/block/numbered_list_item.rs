@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichTextVec;
 
-use super::{Block, BlockChildren, BlockContent, BlockMeta, MarkdownBlockWithChildren};
+use super::{Block, BlockChildren, BlockContent, BlockMeta, MarkdownBlock};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -10,23 +10,33 @@ pub struct NumberedListItem {
     numbered_list_item: BlockContent,
     #[serde(skip_serializing, default)]
     children: Vec<Block>,
+    #[serde(skip_serializing, default)]
+    meta: BlockMeta,
 }
 
 impl NumberedListItem {
     pub(crate) fn append(&mut self, child: Block) {
         self.children.push(child);
     }
+
+    pub(crate) fn with_meta(self, meta: BlockMeta) -> NumberedListItem {
+        NumberedListItem {
+            meta,
+            children: self.children,
+            numbered_list_item: self.numbered_list_item,
+        }
+    }
 }
 
-impl MarkdownBlockWithChildren for NumberedListItem {
-    fn to_markdown(&self, meta: &BlockMeta) -> String {
+impl MarkdownBlock for NumberedListItem {
+    fn to_markdown(&self) -> String {
         let inline = self.numbered_list_item.rich_text.to_markdown();
 
         if self.children.is_empty() {
-            format!("{}. {}", meta.order, inline)
+            format!("{}. {}", self.meta.order, inline)
         } else {
-            let children_markdown = self.children.to_markdown(meta.depth + 1);
-            format!("{}. {}\n{}", meta.order, inline, children_markdown)
+            let children_markdown = self.children.to_markdown(self.meta.depth + 1);
+            format!("{}. {}\n{}", self.meta.order, inline, children_markdown)
         }
     }
 }

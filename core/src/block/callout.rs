@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use crate::rich_text::{RichText, RichTextVec};
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -22,7 +22,7 @@ struct IconContent {
     emoji: String,
 }
 
-impl MarkdownBlockWithoutChildren for Callout {
+impl MarkdownBlock for Callout {
     fn to_markdown(&self) -> String {
         if self.callout.icon.emoji.is_empty() {
             format!("> {}", self.callout.rich_text.to_markdown())

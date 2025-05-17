@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -13,7 +13,7 @@ struct BookmarkContent {
     url: String,
 }
 
-impl MarkdownBlockWithoutChildren for Bookmark {
+impl MarkdownBlock for Bookmark {
     fn to_markdown(&self) -> String {
         format!("[Bookmark: {}]({})", self.bookmark.url, self.bookmark.url)
     }

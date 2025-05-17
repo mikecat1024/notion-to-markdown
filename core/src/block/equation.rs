@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Equation {
@@ -13,7 +13,7 @@ pub struct EquationContent {
     expression: String,
 }
 
-impl MarkdownBlockWithoutChildren for Equation {
+impl MarkdownBlock for Equation {
     fn to_markdown(&self) -> String {
         format!("$$\n{}\n$$", self.equation.expression)
     }

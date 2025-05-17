@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use crate::rich_text::RichTextVec;
 
-use super::{BlockContent, MarkdownBlockWithoutChildren};
+use super::{BlockContent, MarkdownBlock};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -10,7 +10,7 @@ pub struct Heading1 {
     heading_1: BlockContent,
 }
 
-impl MarkdownBlockWithoutChildren for Heading1 {
+impl MarkdownBlock for Heading1 {
     fn to_markdown(&self) -> String {
         format!("# {}", self.heading_1.rich_text.to_markdown())
     }

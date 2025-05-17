@@ -57,107 +57,31 @@ const INDENT: &str = "  ";
 #[serde(rename_all = "snake_case")]
 
 pub enum Block {
-    NumberedListItem {
-        #[serde(flatten)]
-        numbered_list_item: NumberedListItem,
-        #[serde(skip_serializing, default)]
-        meta: BlockMeta,
-    },
-    BulletedListItem {
-        #[serde(flatten)]
-        bulleted_list_item: BulletedListItem,
-
-        #[serde(skip_serializing, default)]
-        meta: BlockMeta,
-    },
-    Paragraph {
-        #[serde(flatten)]
-        paragraph: Paragraph,
-    },
-    Pdf {
-        #[serde(flatten)]
-        pdf: Pdf,
-    },
-    Quote {
-        #[serde(flatten)]
-        quote: Quote,
-    },
-    Code {
-        #[serde(flatten)]
-        code: Code,
-    },
+    NumberedListItem(NumberedListItem),
+    BulletedListItem(BulletedListItem),
+    Paragraph(Paragraph),
+    Pdf(Pdf),
+    Quote(Quote),
+    Code(Code),
     #[serde(rename = "heading_1")]
-    Heading1 {
-        #[serde(flatten)]
-        heading_1: Heading1,
-    },
+    Heading1(Heading1),
     #[serde(rename = "heading_2")]
-    Heading2 {
-        #[serde(flatten)]
-        heading_2: Heading2,
-    },
+    Heading2(Heading2),
     #[serde(rename = "heading_3")]
-    Heading3 {
-        #[serde(flatten)]
-        heading_3: Heading3,
-    },
-    Image {
-        #[serde(flatten)]
-        image: Image,
-    },
-    Divider {
-        #[serde(flatten)]
-        divider: Divider,
-    },
-    File {
-        #[serde(flatten)]
-        file: File,
-    },
-    ToDo {
-        #[serde(flatten)]
-        to_do: ToDo,
-
-        #[serde(skip_serializing, default)]
-        meta: BlockMeta,
-    },
-    Bookmark {
-        #[serde(flatten)]
-        bookmark: Bookmark,
-    },
-    Callout {
-        #[serde(flatten)]
-        callout: Callout,
-    },
-    ChildPage {
-        #[serde(flatten)]
-        child_page: ChildPage,
-    },
-    Equation {
-        #[serde(flatten)]
-        equation: Equation,
-    },
-    Table {
-        #[serde(flatten)]
-        table: Table,
-        #[serde(skip_serializing, default)]
-        meta: BlockMeta,
-    },
-    TableRow {
-        #[serde(flatten)]
-        table_row: TableRow,
-    },
-    Embed {
-        #[serde(flatten)]
-        embed: Embed,
-    },
-    LinkPreview {
-        #[serde(flatten)]
-        link_preview: LinkPreview,
-    },
-    ChildDatabase {
-        #[serde(flatten)]
-        child_database: ChildDatabase,
-    },
+    Heading3(Heading3),
+    Image(Image),
+    Divider(Divider),
+    File(File),
+    ToDo(ToDo),
+    Bookmark(Bookmark),
+    Callout(Callout),
+    ChildPage(ChildPage),
+    Equation(Equation),
+    Table(Table),
+    TableRow(TableRow),
+    Embed(Embed),
+    LinkPreview(LinkPreview),
+    ChildDatabase(ChildDatabase),
     Unsupported,
     #[serde(other)]
     Unexpected,
@@ -180,81 +104,57 @@ impl Default for BlockMeta {
 impl Block {
     fn with_meta(self, meta: BlockMeta) -> Block {
         match self {
-            Block::NumberedListItem {
-                numbered_list_item, ..
-            } => Block::NumberedListItem {
-                numbered_list_item,
-                meta: meta,
-            },
-            Block::BulletedListItem {
-                bulleted_list_item, ..
-            } => Block::BulletedListItem {
-                bulleted_list_item,
-                meta: meta,
-            },
-            Block::ToDo { to_do, .. } => Block::ToDo { to_do, meta },
-            Block::Paragraph { paragraph } => Block::Paragraph { paragraph },
+            Block::NumberedListItem(item) => Block::NumberedListItem(item.with_meta(meta)),
+            Block::BulletedListItem(item) => Block::BulletedListItem(item.with_meta(meta)),
+            Block::ToDo(item) => Block::ToDo(item.with_meta(meta)),
+            Block::Table(item) => Block::Table(item.with_meta(meta)),
             _ => self,
         }
     }
 
     pub fn append(&mut self, child: Block) {
         match self {
-            Block::Table { table, .. } => table.append(child),
-            Block::ToDo { to_do, .. } => to_do.append(child),
-            Block::BulletedListItem {
-                bulleted_list_item, ..
-            } => bulleted_list_item.append(child),
-            Block::NumberedListItem {
-                numbered_list_item, ..
-            } => numbered_list_item.append(child),
+            Block::Table(item) => item.append(child),
+            Block::ToDo(item) => item.append(child),
+            Block::BulletedListItem(item) => item.append(child),
+            Block::NumberedListItem(item) => item.append(child),
             _ => {}
         }
     }
 
     pub fn to_markdown(&self) -> String {
         match &self {
-            Block::NumberedListItem {
-                numbered_list_item,
-                meta,
-            } => numbered_list_item.to_markdown(meta),
-            Block::BulletedListItem {
-                bulleted_list_item,
-                meta,
-            } => bulleted_list_item.to_markdown(meta),
-            Block::ToDo { to_do, meta } => to_do.to_markdown(meta),
-            Block::Table { table, meta } => table.to_markdown(meta),
-            Block::Paragraph { paragraph, .. } => paragraph.to_markdown(),
-            Block::Pdf { pdf, .. } => pdf.to_markdown(),
-            Block::Quote { quote, .. } => quote.to_markdown(),
-            Block::Code { code } => code.to_markdown(),
-            Block::Heading1 { heading_1, .. } => heading_1.to_markdown(),
-            Block::Heading2 { heading_2, .. } => heading_2.to_markdown(),
-            Block::Heading3 { heading_3, .. } => heading_3.to_markdown(),
-            Block::Image { image } => image.to_markdown(),
-            Block::Divider { divider } => divider.to_markdown(),
-            Block::File { file } => file.to_markdown(),
-            Block::Bookmark { bookmark } => bookmark.to_markdown(),
-            Block::Equation { equation } => equation.to_markdown(),
-            Block::Callout { callout, .. } => callout.to_markdown(),
-            Block::ChildPage { child_page, .. } => child_page.to_markdown(),
-            Block::Embed { embed } => embed.to_markdown(),
-            Block::LinkPreview { link_preview } => link_preview.to_markdown(),
-            Block::ChildDatabase { child_database } => child_database.to_markdown(),
+            Block::NumberedListItem(item) => item.to_markdown(),
+            Block::BulletedListItem(item) => item.to_markdown(),
+            Block::ToDo(item) => item.to_markdown(),
+            Block::Table(item) => item.to_markdown(),
+            Block::Paragraph(item) => item.to_markdown(),
+            Block::Pdf(item) => item.to_markdown(),
+            Block::Quote(item) => item.to_markdown(),
+            Block::Code(item) => item.to_markdown(),
+            Block::Heading1(item) => item.to_markdown(),
+            Block::Heading2(item) => item.to_markdown(),
+            Block::Heading3(item) => item.to_markdown(),
+            Block::Image(item) => item.to_markdown(),
+            Block::Divider(item) => item.to_markdown(),
+            Block::File(item) => item.to_markdown(),
+            Block::Bookmark(item) => item.to_markdown(),
+            Block::Equation(item) => item.to_markdown(),
+            Block::Callout(item) => item.to_markdown(),
+            Block::ChildPage(item) => item.to_markdown(),
+            Block::Embed(item) => item.to_markdown(),
+            Block::LinkPreview(item) => item.to_markdown(),
+            Block::ChildDatabase(item) => item.to_markdown(),
             Block::Unsupported => UNSUPPORTED_NODE_TEXT.into(),
             Block::Unexpected => UNEXPECTED_NODE_TEXT.into(),
-            Block::TableRow { .. } => panic!(
+            Block::TableRow(_) => panic!(
                 "The method to_markdown for Block::TableRow is not allowed. Please append rows to table as children."
             ),
         }
     }
 }
 
-trait MarkdownBlockWithChildren {
-    fn to_markdown(&self, meta: &BlockMeta) -> String;
-}
-
-trait MarkdownBlockWithoutChildren {
+trait MarkdownBlock {
     fn to_markdown(&self) -> String;
 }
 

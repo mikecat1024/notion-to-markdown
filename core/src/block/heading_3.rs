@@ -1,4 +1,4 @@
-use super::{BlockContent, MarkdownBlockWithoutChildren};
+use super::{BlockContent, MarkdownBlock};
 use crate::rich_text::RichTextVec;
 use serde::Deserialize;
 
@@ -8,7 +8,7 @@ pub struct Heading3 {
     heading_3: BlockContent,
 }
 
-impl MarkdownBlockWithoutChildren for Heading3 {
+impl MarkdownBlock for Heading3 {
     fn to_markdown(&self) -> String {
         format!("### {}", self.heading_3.rich_text.to_markdown())
     }

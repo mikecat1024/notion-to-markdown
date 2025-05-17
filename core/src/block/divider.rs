@@ -1,12 +1,12 @@
 use serde::Deserialize;
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct Divider {}
 
-impl MarkdownBlockWithoutChildren for Divider {
+impl MarkdownBlock for Divider {
     fn to_markdown(&self) -> String {
         "-----".to_string()
     }

@@ -2,7 +2,7 @@ use serde::Deserialize;
 
 use crate::rich_text::{RichText, RichTextVec};
 
-use super::MarkdownBlockWithoutChildren;
+use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Code {
@@ -16,7 +16,7 @@ pub struct CodeContent {
     pub language: String,
 }
 
-impl MarkdownBlockWithoutChildren for Code {
+impl MarkdownBlock for Code {
     fn to_markdown(&self) -> String {
         let inline = self.code.rich_text.to_markdown();
         format!("``` {}\n{}\n```", self.code.language, inline)
