@@ -8,7 +8,10 @@ use crate::{
 use super::{Block, BlockMeta, MarkdownBlockWithChildren};
 
 #[derive(Deserialize, Clone, Debug)]
-pub struct Table {}
+pub struct Table {
+    #[serde(skip_serializing, default)]
+    children: Vec<Block>,
+}
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
@@ -22,9 +25,16 @@ struct TableRowContent {
     pub cells: Vec<Vec<RichText>>,
 }
 
+impl Table {
+    pub(crate) fn append(&mut self, child: Block) {
+        self.children.push(child);
+    }
+}
+
 impl MarkdownBlockWithChildren for Table {
-    fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String {
-        let table: Vec<Vec<String>> = children
+    fn to_markdown(&self, meta: &BlockMeta) -> String {
+        let table: Vec<Vec<String>> = self
+            .children
             .iter()
             .filter_map(|child| match child {
                 Block::TableRow { table_row, .. } => Some(

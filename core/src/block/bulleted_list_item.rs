@@ -8,16 +8,24 @@ use super::{Block, BlockContent, BlockMeta, MarkdownBlockWithChildren};
 #[serde(rename_all = "snake_case")]
 pub struct BulletedListItem {
     bulleted_list_item: BlockContent,
+    #[serde(skip_serializing, default)]
+    children: Vec<Block>,
+}
+
+impl BulletedListItem {
+    pub(crate) fn append(&mut self, child: Block) {
+        self.children.push(child);
+    }
 }
 
 impl MarkdownBlockWithChildren for BulletedListItem {
-    fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String {
+    fn to_markdown(&self, meta: &BlockMeta) -> String {
         let inline = self.bulleted_list_item.rich_text.to_markdown();
 
-        if children.is_empty() {
+        if self.children.is_empty() {
             format!("- {}", inline)
         } else {
-            let children_markdown = children.to_markdown(meta.depth + 1);
+            let children_markdown = self.children.to_markdown(meta.depth + 1);
             format!("- {}\n{}", inline, children_markdown)
         }
     }

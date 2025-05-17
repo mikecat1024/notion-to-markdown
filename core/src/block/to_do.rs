@@ -10,6 +10,8 @@ use super::{Block, BlockMeta, MarkdownBlockWithChildren};
 #[derive(Deserialize, Clone, Debug)]
 pub struct ToDo {
     to_do: ToDoContent,
+    #[serde(skip_serializing, default)]
+    children: Vec<Block>,
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -19,14 +21,20 @@ pub struct ToDoContent {
     checked: bool,
 }
 
+impl ToDo {
+    pub(crate) fn append(&mut self, child: Block) {
+        self.children.push(child);
+    }
+}
+
 impl MarkdownBlockWithChildren for ToDo {
-    fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String {
+    fn to_markdown(&self, meta: &BlockMeta) -> String {
         let checked_x = if self.to_do.checked { "x" } else { " " };
 
-        if children.is_empty() {
+        if self.children.is_empty() {
             format!("- [{}] {}", checked_x, self.to_do.rich_text.to_markdown())
         } else {
-            let children_markdown = children.to_markdown(meta.depth + 1);
+            let children_markdown = self.children.to_markdown(meta.depth + 1);
             format!(
                 "- [{}] {}\n{}",
                 checked_x,

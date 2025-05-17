@@ -61,23 +61,18 @@ pub enum Block {
         #[serde(flatten)]
         numbered_list_item: NumberedListItem,
         #[serde(skip_serializing, default)]
-        children: Vec<Block>,
-        #[serde(skip_serializing, default)]
         meta: BlockMeta,
     },
     BulletedListItem {
         #[serde(flatten)]
         bulleted_list_item: BulletedListItem,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
+
         #[serde(skip_serializing, default)]
         meta: BlockMeta,
     },
     Paragraph {
         #[serde(flatten)]
         paragraph: Paragraph,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
     },
     Pdf {
         #[serde(flatten)]
@@ -86,8 +81,6 @@ pub enum Block {
     Quote {
         #[serde(flatten)]
         quote: Quote,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
     },
     Code {
         #[serde(flatten)]
@@ -97,29 +90,21 @@ pub enum Block {
     Heading1 {
         #[serde(flatten)]
         heading_1: Heading1,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
     },
     #[serde(rename = "heading_2")]
     Heading2 {
         #[serde(flatten)]
         heading_2: Heading2,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
     },
     #[serde(rename = "heading_3")]
     Heading3 {
         #[serde(flatten)]
         heading_3: Heading3,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
     },
-
     Image {
         #[serde(flatten)]
         image: Image,
     },
-
     Divider {
         #[serde(flatten)]
         divider: Divider,
@@ -131,8 +116,7 @@ pub enum Block {
     ToDo {
         #[serde(flatten)]
         to_do: ToDo,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
+
         #[serde(skip_serializing, default)]
         meta: BlockMeta,
     },
@@ -143,8 +127,6 @@ pub enum Block {
     Callout {
         #[serde(flatten)]
         callout: Callout,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
     },
     ChildPage {
         #[serde(flatten)]
@@ -157,8 +139,6 @@ pub enum Block {
     Table {
         #[serde(flatten)]
         table: Table,
-        #[serde(skip_serializing, default)]
-        children: Vec<Block>,
         #[serde(skip_serializing, default)]
         meta: BlockMeta,
     },
@@ -174,10 +154,6 @@ pub enum Block {
         #[serde(flatten)]
         link_preview: LinkPreview,
     },
-    // LinkToPage {
-    //     #[serde(flatten)]
-    //     link_to_page: LinkToPage,
-    // },
     ChildDatabase {
         #[serde(flatten)]
         child_database: ChildDatabase,
@@ -205,55 +181,33 @@ impl Block {
     fn with_meta(self, meta: BlockMeta) -> Block {
         match self {
             Block::NumberedListItem {
-                numbered_list_item,
-                children,
-                ..
+                numbered_list_item, ..
             } => Block::NumberedListItem {
                 numbered_list_item,
-                children,
                 meta: meta,
             },
             Block::BulletedListItem {
-                bulleted_list_item,
-                children,
-                ..
+                bulleted_list_item, ..
             } => Block::BulletedListItem {
                 bulleted_list_item,
-                children,
                 meta: meta,
             },
-            Block::ToDo {
-                to_do,
-                children,
-                meta,
-            } => Block::ToDo {
-                to_do,
-                children,
-                meta,
-            },
-            Block::Paragraph {
-                paragraph,
-                children,
-            } => Block::Paragraph {
-                paragraph,
-                children,
-            },
-            _ => todo!("not implemented"),
+            Block::ToDo { to_do, .. } => Block::ToDo { to_do, meta },
+            Block::Paragraph { paragraph } => Block::Paragraph { paragraph },
+            _ => self,
         }
     }
 
     pub fn append(&mut self, child: Block) {
         match self {
-            Block::Paragraph { children, .. }
-            | Block::Heading1 { children, .. }
-            | Block::Heading2 { children, .. }
-            | Block::Heading3 { children, .. }
-            | Block::Callout { children, .. }
-            | Block::Quote { children, .. }
-            | Block::BulletedListItem { children, .. }
-            | Block::NumberedListItem { children, .. }
-            | Block::Table { children, .. }
-            | Block::ToDo { children, .. } => children.push(child),
+            Block::Table { table, .. } => table.append(child),
+            Block::ToDo { to_do, .. } => to_do.append(child),
+            Block::BulletedListItem {
+                bulleted_list_item, ..
+            } => bulleted_list_item.append(child),
+            Block::NumberedListItem {
+                numbered_list_item, ..
+            } => numbered_list_item.append(child),
             _ => {}
         }
     }
@@ -262,24 +216,14 @@ impl Block {
         match &self {
             Block::NumberedListItem {
                 numbered_list_item,
-                children,
                 meta,
-            } => numbered_list_item.to_markdown(children, meta),
+            } => numbered_list_item.to_markdown(meta),
             Block::BulletedListItem {
                 bulleted_list_item,
-                children,
                 meta,
-            } => bulleted_list_item.to_markdown(children, meta),
-            Block::ToDo {
-                to_do,
-                children,
-                meta,
-            } => to_do.to_markdown(children, meta),
-            Block::Table {
-                table,
-                children,
-                meta,
-            } => table.to_markdown(children, meta),
+            } => bulleted_list_item.to_markdown(meta),
+            Block::ToDo { to_do, meta } => to_do.to_markdown(meta),
+            Block::Table { table, meta } => table.to_markdown(meta),
             Block::Paragraph { paragraph, .. } => paragraph.to_markdown(),
             Block::Pdf { pdf, .. } => pdf.to_markdown(),
             Block::Quote { quote, .. } => quote.to_markdown(),
@@ -299,22 +243,24 @@ impl Block {
             Block::ChildDatabase { child_database } => child_database.to_markdown(),
             Block::Unsupported => UNSUPPORTED_NODE_TEXT.into(),
             Block::Unexpected => UNEXPECTED_NODE_TEXT.into(),
-            Block::TableRow { .. } => panic!("The method to_markdown for Block::TableRow is not allowed. Please append rows to table as children.")
+            Block::TableRow { .. } => panic!(
+                "The method to_markdown for Block::TableRow is not allowed. Please append rows to table as children."
+            ),
         }
     }
 }
 
-pub(crate) trait MarkdownBlockWithChildren {
-    fn to_markdown(&self, children: &Vec<Block>, meta: &BlockMeta) -> String;
+trait MarkdownBlockWithChildren {
+    fn to_markdown(&self, meta: &BlockMeta) -> String;
 }
 
-pub(crate) trait MarkdownBlockWithoutChildren {
+trait MarkdownBlockWithoutChildren {
     fn to_markdown(&self) -> String;
 }
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct BlockContent {
+pub(crate) struct BlockContent {
     pub rich_text: Vec<RichText>,
 }
 
