@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::{Block, BlockChildren, BlockMeta, MarkdownBlock, column::Column};
+use super::{Block, BlockChildren, BlockMeta, MarkdownBlock};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]

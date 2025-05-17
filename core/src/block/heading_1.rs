@@ -1,13 +1,13 @@
 use serde::Deserialize;
 
-use crate::rich_text::RichTextVec;
+use crate::{block::BlockChildren, rich_text::RichTextVec};
 
 use super::{Block, BlockContent, BlockMeta, MarkdownBlock};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct Heading1 {
-    pub heading_1: BlockContent,
+    pub(crate) heading_1: BlockContent,
     #[serde(skip_serializing, default)]
     children: Vec<Block>,
     #[serde(skip_serializing, default)]
@@ -30,7 +30,13 @@ impl Heading1 {
 
 impl MarkdownBlock for Heading1 {
     fn to_markdown(&self) -> String {
-        format!("# {}", self.heading_1.rich_text.to_markdown())
+        let children = self.children.to_markdown(self.meta.depth + 1);
+
+        if children.is_empty() {
+            format!("# {}", self.heading_1.rich_text.to_markdown())
+        } else {
+            format!("# {}\n{}", self.heading_1.rich_text.to_markdown(), children)
+        }
     }
 }
 
@@ -51,6 +57,27 @@ mod test {
             item.to_markdown() + "\n",
             indoc! {r#"
                 # this is headline1
+            "#}
+        )
+    }
+
+    #[test]
+    fn test_to_markdown_with_children() {
+        let mut item: Block =
+            serde_json::from_str(include_str!("../tests/block/headline1_response.json")).unwrap();
+
+        let child: Block =
+            serde_json::from_str(include_str!("../tests/block/paragraph_response.json")).unwrap();
+
+        item.append(child.clone());
+        item.append(child);
+
+        assert_eq!(
+            item.to_markdown() + "\n",
+            indoc! {r#"
+                # this is headline1
+                  this is paragraph
+                  this is paragraph
             "#}
         )
     }

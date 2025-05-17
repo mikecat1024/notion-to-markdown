@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use super::{BREADCRUMB_NODE_TEXT, MarkdownBlock, TEMPLATE_NODE_TEXT};
+use super::{MarkdownBlock, TEMPLATE_NODE_TEXT};
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
