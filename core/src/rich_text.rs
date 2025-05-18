@@ -86,10 +86,6 @@ impl RichText {
         format!("`{}`", text)
     }
 
-    fn underline(text: &str) -> String {
-        format!("<u>{}</u>", text)
-    }
-
     fn link(text: &str, url: &str) -> String {
         format!("[{}]({})", text, url)
     }
@@ -134,10 +130,6 @@ impl RichText {
 
         if annotations.strikethrough {
             markdown_text = Self::strikethrough(&markdown_text)
-        }
-
-        if annotations.underline {
-            markdown_text = Self::underline(&markdown_text)
         }
 
         if !annotations.code {
