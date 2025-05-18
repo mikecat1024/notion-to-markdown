@@ -12,8 +12,8 @@ pub struct Code {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct CodeContent {
-    pub rich_text: Vec<RichText>,
-    pub language: String,
+    rich_text: Vec<RichText>,
+    language: String,
 }
 
 impl MarkdownBlock for Code {

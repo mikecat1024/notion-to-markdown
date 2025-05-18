@@ -20,7 +20,6 @@ enum Heading {
 
 impl MarkdownBlock for TableOfContents {
     fn to_markdown(&self) -> String {
-        println!("{:#?}", self);
         self.headings
             .iter()
             .map(|heading| match heading {

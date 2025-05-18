@@ -214,7 +214,7 @@ pub(crate) struct BlockContent {
     pub rich_text: Vec<RichText>,
 }
 
-trait BlockChildren {
+pub trait BlockChildren {
     fn to_markdown(&self, depth: usize) -> String;
 }
 

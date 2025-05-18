@@ -1,19 +1,19 @@
 {
     "object": "block",
-    "id": "1f6fee32-2d72-8082-9422-db9ee0e1ae1d",
+    "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
     "parent": {
         "type": "page_id",
-        "page_id": "1eefee32-2d72-8086-a718-d211349052d2"
+        "page_id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
     },
     "created_time": "2025-05-17T20:45:00.000Z",
     "last_edited_time": "2025-05-17T20:45:00.000Z",
     "created_by": {
         "object": "user",
-        "id": "d26770d1-4b8d-4db9-b109-ed9d7a6b689a"
+        "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
     },
     "last_edited_by": {
         "object": "user",
-        "id": "d26770d1-4b8d-4db9-b109-ed9d7a6b689a"
+        "id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
     },
     "has_children": true,
     "archived": false,
@@ -41,5 +41,5 @@
         ],
         "color": "default"
     },
-    "request_id": "b0da0203-397d-43c6-b63f-1ecb82e21dd6"
+    "request_id": "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
 }

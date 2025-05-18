@@ -19,7 +19,7 @@ pub struct ToDo {
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct ToDoContent {
-    pub rich_text: Vec<RichText>,
+    rich_text: Vec<RichText>,
     checked: bool,
 }
 
