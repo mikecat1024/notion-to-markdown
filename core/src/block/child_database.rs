@@ -1,12 +1,13 @@
 use serde::Deserialize;
 
-use crate::escape_page_title;
+use crate::{ChildLinkTarget, MarkdownRenderOptions, block::NOTION_ORIGIN, escape_page_title};
 
 use super::MarkdownBlock;
 
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct ChildDatabase {
+    id: String,
     child_database: ChildDatabaseContent,
 }
 #[derive(Deserialize, Clone, Debug)]
@@ -17,12 +18,18 @@ struct ChildDatabaseContent {
 
 impl MarkdownBlock for ChildDatabase {
     fn to_markdown(&self) -> String {
-        let title = escape_page_title(&self.child_database.title);
+        let options = MarkdownRenderOptions::default();
 
-        format!(
-            "[Database: {}]({}/{}.md)",
-            self.child_database.title, title, title
-        )
+        let link = match options.child_page_link_target {
+            ChildLinkTarget::MarkdownFile => {
+                let title = escape_page_title(&self.child_database.title);
+
+                format!("{}.md", title)
+            }
+            ChildLinkTarget::Notion => format!("{}/{}", NOTION_ORIGIN, self.id),
+        };
+
+        format!("[Child Database: {}]({})", self.child_database.title, link)
     }
 }
 

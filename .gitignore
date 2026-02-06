@@ -20,3 +20,5 @@ target/
 
 .vscode
 .DS_Store
+.env
+output.md

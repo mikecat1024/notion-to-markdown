@@ -22,7 +22,7 @@ mod test {
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
-    use crate::block::Block;
+    use crate::block::{Block, BlockChildren};
 
     #[test]
     fn test_to_markdown() {
@@ -33,6 +33,23 @@ mod test {
             item.to_markdown() + "\n",
             indoc! {r#"
                 > this is quote
+            "#}
+        )
+    }
+
+    #[test]
+    fn test_to_markdown_followed_by_paragraph() {
+        let quote: Block =
+            serde_json::from_str(include_str!("../tests/block/quote_response.json")).unwrap();
+        let paragraph: Block =
+            serde_json::from_str(include_str!("../tests/block/paragraph_response.json")).unwrap();
+
+        assert_eq!(
+            vec![quote, paragraph].to_markdown(0) + "\n",
+            indoc! {r#"
+                > this is quote
+
+                this is paragraph
             "#}
         )
     }

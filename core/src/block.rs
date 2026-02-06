@@ -72,6 +72,28 @@ const TEMPLATE_NODE_TEXT: &str = "<!-- template block -->";
 const INDENT: &str = "  ";
 const NOTION_ORIGIN: &str = "https://www.notion.so";
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ChildLinkTarget {
+    #[default]
+    MarkdownFile,
+    Notion,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MarkdownRenderOptions {
+    pub child_page_link_target: ChildLinkTarget,
+    pub child_database_link_target: ChildLinkTarget,
+}
+
+impl Default for MarkdownRenderOptions {
+    fn default() -> Self {
+        Self {
+            child_page_link_target: ChildLinkTarget::Notion,
+            child_database_link_target: ChildLinkTarget::Notion,
+        }
+    }
+}
+
 #[derive(Deserialize, Clone, Debug)]
 #[serde(rename_all = "snake_case", tag = "type")]
 pub enum Block {
@@ -220,22 +242,26 @@ pub trait BlockChildren {
 
 impl BlockChildren for Vec<Block> {
     fn to_markdown(&self, depth: usize) -> String {
-        self.iter()
-            .enumerate()
-            .map(|(order, block)| {
-                format!(
-                    "{}{}",
-                    INDENT.repeat(depth),
-                    block
-                        .clone()
-                        .with_meta(BlockMeta {
-                            order: order + 1,
-                            depth
-                        })
-                        .to_markdown()
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("\n")
+        let mut markdown = String::new();
+
+        for (index, block) in self.iter().enumerate() {
+            if index > 0 {
+                markdown.push('\n');
+            }
+
+            let rendered = block
+                .clone()
+                .with_meta(BlockMeta {
+                    order: index + 1,
+                    depth,
+                })
+                .to_markdown();
+
+            markdown.push_str(&INDENT.repeat(depth));
+            markdown.push_str(&rendered);
+            markdown.push('\n');
+        }
+
+        markdown
     }
 }

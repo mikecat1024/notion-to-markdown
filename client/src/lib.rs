@@ -40,9 +40,17 @@ pub struct NotionClient {
 }
 
 #[derive(serde::Deserialize)]
-pub struct BlockChildrenResponse {
-    pub results: Vec<Block>,
-    pub next_cursor: Option<String>,
+struct ApiBlockChildrenResponse {
+    results: Vec<ApiBlock>,
+    next_cursor: Option<String>,
+}
+
+#[derive(serde::Deserialize)]
+struct ApiBlock {
+    id: String,
+    has_children: bool,
+    #[serde(flatten)]
+    block: Block,
 }
 
 impl NotionClient {
@@ -59,7 +67,9 @@ impl NotionClient {
         block_id: &str,
         start_cursor: Option<&str>,
         page_size: Option<u32>,
-    ) -> Result<BlockChildrenResponse, NotionClientError> {
+    ) -> Result<ApiBlockChildrenResponse, NotionClientError> {
+        log::info!("RETRIEVING BLOCK: {}", block_id);
+
         let mut req = self
             .client
             .get(&format!(
@@ -81,16 +91,16 @@ impl NotionClient {
         if !status.is_success() {
             return Err(NotionClientError::Status(status));
         }
-        let body = resp.json::<BlockChildrenResponse>().await?;
+        let body = resp.json::<ApiBlockChildrenResponse>().await?;
         Ok(body)
     }
 
-    pub async fn retrieve_block_children(
+    async fn retrieve_block_children_nodes(
         &self,
         block_id: &str,
         initial_cursor: Option<&str>,
         page_size: Option<u32>,
-    ) -> Result<Vec<Block>, NotionClientError> {
+    ) -> Result<Vec<ApiBlock>, NotionClientError> {
         let mut all_results = Vec::new();
         let mut cursor = initial_cursor.map(|s| s.to_string());
 
@@ -121,5 +131,45 @@ impl NotionClient {
         }
 
         Ok(all_results)
+    }
+
+    fn hydrate_block<'a>(
+        &'a self,
+        mut block: ApiBlock,
+        page_size: Option<u32>,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Block, NotionClientError>> + 'a>>
+    {
+        Box::pin(async move {
+            if block.has_children {
+                let children = self
+                    .retrieve_block_children_nodes(&block.id, None, page_size)
+                    .await?;
+                for child in children {
+                    block
+                        .block
+                        .append(self.hydrate_block(child, page_size).await?);
+                }
+            }
+
+            Ok(block.block)
+        })
+    }
+
+    pub async fn retrieve_block_children(
+        &self,
+        block_id: &str,
+        initial_cursor: Option<&str>,
+        page_size: Option<u32>,
+    ) -> Result<Vec<Block>, NotionClientError> {
+        let children = self
+            .retrieve_block_children_nodes(block_id, initial_cursor, page_size)
+            .await?;
+
+        let mut blocks = Vec::with_capacity(children.len());
+        for child in children {
+            blocks.push(self.hydrate_block(child, page_size).await?);
+        }
+
+        Ok(blocks)
     }
 }

@@ -23,7 +23,8 @@ pub(crate) enum RichText {
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(crate) enum Mention {
-    LinkMention(LinkMention),
+    #[serde(rename = "link_mention")]
+    Link(LinkMention),
     User(UserMention),
 }
 
@@ -39,7 +40,8 @@ pub(crate) struct UserMentionContent {
 
 #[derive(Debug, Deserialize, Clone)]
 pub(crate) struct LinkMention {
-    link_mention: LinkMentionContent,
+    #[serde(rename = "link_mention")]
+    link: LinkMentionContent,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -143,12 +145,16 @@ impl RichText {
         markdown_text
     }
 
-    fn link_mention_to_markdown(
+    fn link_to_markdown(
         title: &String,
         href: &Option<String>,
         annotations: &Annotations,
     ) -> String {
         Self::text_to_markdown(title, href, annotations)
+    }
+
+    fn user_to_markdown(name: &String, href: &Option<String>, annotations: &Annotations) -> String {
+        Self::text_to_markdown(name, href, annotations)
     }
 
     pub(crate) fn to_markdown(&self) -> String {
@@ -163,12 +169,8 @@ impl RichText {
                 href,
                 annotations,
             } => match mention {
-                Mention::LinkMention(item) => {
-                    Self::link_mention_to_markdown(&item.link_mention.title, href, annotations)
-                }
-                Mention::User(item) => {
-                    Self::link_mention_to_markdown(&item.user.name, href, annotations)
-                }
+                Mention::Link(item) => Self::link_to_markdown(&item.link.title, href, annotations),
+                Mention::User(item) => Self::user_to_markdown(&item.user.name, href, annotations),
             },
         }
     }
