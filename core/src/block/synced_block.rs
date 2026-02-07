@@ -56,6 +56,7 @@ mod test {
             indoc! {r#"
                 this is paragraph
                 this is paragraph
+
             "#}
         )
     }

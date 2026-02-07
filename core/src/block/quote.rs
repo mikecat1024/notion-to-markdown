@@ -48,8 +48,8 @@ mod test {
             vec![quote, paragraph].to_markdown(0) + "\n",
             indoc! {r#"
                 > this is quote
-
                 this is paragraph
+
             "#}
         )
     }

@@ -65,6 +65,7 @@ mod test {
                 this is toggle
                   this is paragraph
                   this is paragraph
+
             "#}
         )
     }
