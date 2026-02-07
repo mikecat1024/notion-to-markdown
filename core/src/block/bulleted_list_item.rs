@@ -69,7 +69,9 @@ mod test {
               - this is bulleted list item
                 - this is bulleted list item
                   - this is bulleted list item
+
                 - this is bulleted list item
+
             "#},
         )
     }

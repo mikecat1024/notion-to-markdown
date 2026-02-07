@@ -20,7 +20,7 @@ impl MarkdownBlock for ChildDatabase {
     fn to_markdown(&self) -> String {
         let options = MarkdownRenderOptions::default();
 
-        let link = match options.child_page_link_target {
+        let link = match options.child_database_link_target {
             ChildLinkTarget::MarkdownFile => {
                 let title = escape_page_title(&self.child_database.title);
 
@@ -50,7 +50,7 @@ mod test {
         assert_eq!(
             item.to_markdown() + "\n",
             indoc! {r#"
-                [Database: this is child database](this_is_child_database/this_is_child_database.md)
+                [Child Database: this is child database](https://www.notion.so/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX)
             "#}
         )
     }

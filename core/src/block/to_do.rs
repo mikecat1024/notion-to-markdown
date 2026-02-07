@@ -82,6 +82,7 @@ mod test {
                 - [ ] this is to do item
                   - [ ] this is to do item
                   - [x] this is to do item
+
             "#}
         )
     }

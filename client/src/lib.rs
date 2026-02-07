@@ -68,6 +68,7 @@ impl NotionClient {
         start_cursor: Option<&str>,
         page_size: Option<u32>,
     ) -> Result<ApiBlockChildrenResponse, NotionClientError> {
+        #[cfg(feature = "log")]
         log::info!("RETRIEVING BLOCK: {}", block_id);
 
         let mut req = self

@@ -245,10 +245,6 @@ impl BlockChildren for Vec<Block> {
         let mut markdown = String::new();
 
         for (index, block) in self.iter().enumerate() {
-            if index > 0 {
-                markdown.push('\n');
-            }
-
             let rendered = block
                 .clone()
                 .with_meta(BlockMeta {

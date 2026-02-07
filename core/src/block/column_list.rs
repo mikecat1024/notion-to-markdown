@@ -59,7 +59,10 @@ mod test {
             item.to_markdown() + "\n",
             indoc! {r#"
                 this is paragraph
+
                 this is paragraph
+
+
             "#}
         )
     }

@@ -68,7 +68,9 @@ mod test {
               1. this is numbered list item
                 1. this is numbered list item
                   1. this is numbered list item
+
                 2. this is numbered list item
+
             "#}
         )
     }

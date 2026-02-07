@@ -53,7 +53,7 @@ mod test {
         assert_eq!(
             item.to_markdown() + "\n",
             indoc! {r#"
-                [Child Page: this is child page](this_is_child_page.md)
+                [Child Page: this is child page](https://www.notion.so/XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX)
             "#}
         )
     }
