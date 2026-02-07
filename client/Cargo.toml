@@ -3,11 +3,18 @@ name = "client"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["log"]
+log = ["dep:env_logger", "dep:log"]
+
 [dependencies]
-reqwest = { version = "0.12.15", features = ["json"] }
+dotenvy = { version = "0.15.7" }
+reqwest = { version = "0.12.15", default-features = false, features = [
+    "json",
+    "rustls-tls",
+] }
 serde = "1.0.219"
 notion-to-markdown-core = { path = "../core" }
-tokio = { version = "1.45.0", features = ["full"] }
-log = "0.4.27"
-env_logger = "0.11.8"
-dotenvy = "0.15.7"
+tokio = { version = "1.45.0", features = ["macros", "rt", "time"] }
+log = { version = "0.4.27", optional = true }
+env_logger = { version = "0.11.8", default-features = false, optional = true }
